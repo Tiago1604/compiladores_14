@@ -1,5 +1,6 @@
 %{
 #include "exemplo.tab.h"
+int yyparse(void); 
 %}
 
 /* Definições de padrões de token e ações */
