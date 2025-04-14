@@ -1,2 +1,2 @@
 if 3 > 5:
-    print(˜certo˜)
+    print("certo")
