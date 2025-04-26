@@ -12,8 +12,9 @@ nav:
     - Semana 1: atividades_semanais/Semana1.md
     - Semana 2: atividades_semanais/Semana2.md
     - Semana 3: atividades_semanais/Semana3.md
+  - Ponto de Controle:
+    - Ponto de Controle 1: ponto_de_controle/ponto_de_controle1.md
 
-   
 theme:
   logo: assets/logo.jpg
   name: material
