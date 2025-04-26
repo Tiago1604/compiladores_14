@@ -5,13 +5,13 @@ nav:
   - Home:
       - Sobre: index.md
   - Planejamento:
-    - Cronograma: cronograma.md
-    - Metodologia: metodologia.md
-    - Ferramentas: ferramentas.md
+    - Cronograma: planejamento/cronograma.md
+    - Metodologia: planejamento/metodologia.md
+    - Ferramentas: planejamento/ferramentas.md
   - Atividades Semanais:
-    - Semana 1: Semana1.md
-    - Semana 2: Semana2.md
-    - Semana 3: Semana3.md
+    - Semana 1: atividades_semanais/Semana1.md
+    - Semana 2: atividades_semanais/Semana2.md
+    - Semana 3: atividades_semanais/Semana3.md
 
    
 theme:
