@@ -1,0 +1,39 @@
+site_name: Compiladores 14
+site_url: https://github.com/Tiago1604/compiladores_14
+
+nav:
+  - Home:
+      - Sobre: index.md
+  - Planejamento:
+    - Cronograma: cronograma.md
+    - Metodologia: metodologia.md
+    - Ferramentas: ferramentas.md
+  - Atividades Semanais:
+    - Semana 1: Semana1.md
+    - Semana 2: Semana2.md
+    - Semana 3: Semana3.md
+
+   
+theme:
+  logo: assets/logo.jpg
+  name: material
+  font:
+    text: IBM Plex Serif
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - content.code.copy
+  palette:
+    - scheme: light
+      primary: custom
+      toggle:
+        icon: material/weather-night
+        name: Trocar para modo escuro
+
+    - scheme: slate
+      primary: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Trocar para modo claro
+icon:
+  repo: fontawesome/brands/git-alt
