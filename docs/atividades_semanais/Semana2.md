@@ -2,6 +2,24 @@
 
 Na segunda semana, avançamos no uso das ferramentas **Flex** e **Bison**, implementando um analisador mais complexo que reconhece números e processa entradas.
 
+## Atividades Realizadas
+
+Durante a segunda semana, focamos no desenvolvimento de um analisador léxico e sintático mais robusto, utilizando novamente as ferramentas **Flex** e **Bison**.
+
+As atividades principais realizadas foram:
+
+- **Implementação de um analisador de números**: criamos regras no Flex para reconhecer números inteiros (positivos e negativos), usando expressões regulares.
+- **Definição de uma gramática simples no Bison**: definimos regras para que o parser pudesse interpretar as entradas recebidas, associando-as a ações específicas, como imprimir o número lido.
+- **Configuração do fluxo de entrada**: testamos tanto a entrada manual no terminal quanto a leitura de dados a partir de um arquivo (`entrada.txt`), garantindo flexibilidade na forma de uso do programa.
+- **Tratamento de entradas inválidas**: deixamos o analisador preparado para lidar com caracteres não reconhecidos, com a possibilidade de estender o tratamento de erros caso necessário.
+
+Além da prática de programação, também aprofundamos nossos estudos:
+- Revisamos o funcionamento da comunicação entre o analisador léxico (Flex) e o sintático (Bison).
+- Entendemos melhor como o Flex gera tokens e como o Bison organiza a lógica de parser através das produções e ações associadas.
+- Aprendemos como compilar e linkar corretamente os arquivos gerados, ajustando comandos conforme o ambiente de desenvolvimento.
+
+Essas atividades ajudaram a consolidar a base para projetos mais complexos nas próximas semanas.
+
 ## Compilando e executando o exemplo `exemplo.l` + `exemplo.y`
 
 1. **Gerar o arquivo do Bison**  
@@ -38,3 +56,5 @@ Na segunda semana, avançamos no uso das ferramentas **Flex** e **Bison**, imple
     - A cada número reconhecido, o programa imprime `Número lido: <valor>`.
     - O que não bater com `[+\-]?[0-9]{1,10}` será ignorado ou tratado conforme suas regras.  
     - Caso queira tratar caracteres não reconhecidos como erro, basta ajustar a regra `.` no arquivo `.l` para gerar alguma mensagem ou retornar um token de erro.
+
+---
