@@ -1,4 +1,4 @@
-site_name: Compiladores 14
+site_name: PyToC
 site_url: https://github.com/Tiago1604/compiladores_14
 
 nav:
@@ -9,6 +9,11 @@ nav:
     - Metodologia: planejamento/metodologia.md
     - Ferramentas: planejamento/ferramentas.md
     - Planejamento das Sprints: planejamento/planejamento_das_sprints.md
+  - Decisões Técnicas: decisoes/decisao.md
+  - Problemas e Soluções: problemas_e_solucoes/problemas_e_solucoes1.md
+  - Atas de Reunião:
+    - Ata 1: atas/ata1.md
+    - Ata 2: atas/ata2.md
   - Atividades Semanais:
     - Semana 1: atividades_semanais/Semana1.md
     - Semana 2: atividades_semanais/Semana2.md

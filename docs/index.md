@@ -1,12 +1,11 @@
-# Compiladores
+# PyToC
 
 ## Introdução
 
 Bem-vindo ao repositório da disciplina de **Compiladores**.
 
 Nesta matéria, exploraremos os fundamentos e os mecanismos envolvidos na construção de compiladores — programas que traduzem código-fonte de uma linguagem de programação para outra, geralmente para linguagem de máquina.
-
-O objetivo principal é compreender como linguagens de programação são interpretadas e executadas por computadores, além de desenvolver um mini compilador como projeto prático.
+O objetivo principal é compreender como linguagens de programação são interpretadas e executadas por computadores, além de desenvolver um compilador de `Python` para `C` como projeto prático, esse compilador será desenvolvido utilizando o Bison e Flex.
 
 ## Estrutura do Repositório
 
