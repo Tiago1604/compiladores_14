@@ -9,7 +9,7 @@ if          { printf("KW_IF\n"); }
 
 while       { printf("KW_WHILE\n"); }
 
-switch      { printf("KW_SWITHC\n"); }
+switch      { printf("KW_SWITCH\n"); }
 
 for         { printf("KW_FOR\n"); }
 
@@ -17,68 +17,65 @@ print      { printf("KW_PRINTF\n"); }
 
 "("         { printf("KW_PARENTESE_ABRE\n"); }
 
-")"         { printf("KW_PRINTF\n"); }
+")"         { printf("KW_PARENTESE_FECHA\n"); }
 
-":"         { printf("KW_PRINTF\n"); }
+":"         { printf("KW_COLON\n"); }
 
-","         { printf("KW_PRINTF\n"); }
+","         { printf("KW_VIRGULA\n"); }
 
-"{"         { printf("KW_PRINTF\n"); }
+"{"         { printf("KW_ABRE_CHAVE\n"); }
 
-"}"         { printf("KW_PRINTF\n"); }
+"}"         { printf("KW_FECHA_CHAVE\n"); }
 
-";"         { printf("KW_PRINTF\n"); }
+";"         { printf("KW_PONTO_VIRGULA\n"); }
 
-"'"         { printf("KW_teste1\n"); }
+"'"         { printf("KW_TEXTO_SIMBOLO\n"); }
 
-">"         { printf("KW_teste1\n"); }
+">"         { printf("KW_MAIOR_QUE\n"); }
 
-"<"         { printf("KW_teste1\n"); }
+"<"         { printf("KW_MENOR_QUE\n"); }
 
-"return"    { printf("KW_PRINTF\n"); }
+"return"    { printf("KW_RETURN\n"); }
 
-"import"    { printf("KW_PRINTF\n"); }
+"import"    { printf("KW_IMPORT\n"); }
 
-"from"      { printf("KW_PRINTF\n"); }
+"from"      { printf("KW_FROM\n"); }
 
-"def"       { printf("KW_PRINTF\n"); }
+"def"       { printf("KW_DEF\n"); }
 
-"range"     { printf("KW_PRINTF\n"); }
+"range"     { printf("KW_RANGE\n"); }
 
-"int"       { printf("KW_PRINTF\n"); }
+"int"       { printf("KW_INT\n"); }
 
-"float"     { printf("KW_PRINTF\n"); }
+"float"     { printf("KW_FLOAT\n"); }
 
-"string"    { printf("KW_PRINTF\n"); }
+"string"    { printf("KW_STRING\n"); }
 
-"bool"         { printf("KW_PRINTF\n"); }
+"bool"      { printf("KW_BOOL\n"); }
 
-"double"         { printf("KW_PRINTF\n"); }
+"double"    { printf("KW_DOUBLE\n"); }
 
-"in"         { printf("KW_PRINTF\n"); }
+"in"        { printf("KW_IN\n"); }
 
-"with"         { printf("KW_PRINTF\n"); }
+"with"      { printf("KW_WITH\n"); }
 
-"not"         { printf("KW_PRINTF\n"); }
+"not"       { printf("KW_NOT\n"); }
 
-"try"         { printf("KW_PRINTF\n"); }
+"try"       { printf("KW_TRY\n"); }
 
-"except"         { printf("KW_PRINTF\n"); }
+"except"    { printf("KW_EXCEPT\n"); }
 
-"break"         { printf("KW_PRINTF\n"); }
+"break"     { printf("KW_BREAK\n"); }
 
-"continue"         { printf("KW_PRINTF\n"); }
+"continue"  { printf("KW_CONTINUE\n"); }
 
-"or"         { printf("KW_PRINTF\n"); }
+"or"        { printf("KW_OR\n"); }
 
-"and"         { printf("KW_PRINTF\n"); }
+"and"       { printf("KW_AND\n"); }
 
-"elif"         { printf("KW_PRINTF\n"); }
+"elif"      { printf("KW_ELIF\n"); }
 
-"class"         { printf("KW_PRINTF\n"); }
-
-[//"]         { printf("KW_teste1\n"); }
-
+"class"     { printf("KW_CLASS\n"); }
 "//".*     { /* Ignorar comentários de linha */ }
 
 "/*"([^*]|\*+[^*/])*\*+\/    { /* Ignorar comentários de bloco */ }
@@ -90,6 +87,10 @@ print      { printf("KW_PRINTF\n"); }
 [+\-*/=%]   { printf("OPERATOR(%s)\n", yytext); }
 
 [ \t\n]+  { /* Não faz nada */ }
+
+\"([^\"\n\\]|\\.)*\"  { printf("STRING(%s)\n", yytext); }
+
+'([^'\n\\]|\\.)*'     { printf("STRING(%s)\n", yytext); }
 
 .  { printf("UNKNOWN(%s)\n", yytext); }
 
