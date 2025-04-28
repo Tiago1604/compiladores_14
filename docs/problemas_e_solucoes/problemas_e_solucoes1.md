@@ -21,7 +21,15 @@ Este documento descreve os principais problemas enfrentados durante o desenvolvi
 - **Solução**: Verificamos as dependências e incluímos a biblioteca `-lfl` no comando de compilação para resolver os erros relacionados ao Flex. O comando final ficou assim:
   ```bash
   gcc -o compilador parser.tab.c lex.yy.c -lfl
+
 ---
 ### 4. Organização do Repositório
 - **Problema**: A estrutura inicial do repositório estava desorganizada, dificultando a localização de arquivos e o controle de versões.
 - **Solução**: Reestruturamos o repositório, separando os arquivos em diretórios específicos, como Compilador/, docs/, e Estudo/. Também adotamos o uso de branches no Git para organizar o fluxo de trabalho.
+
+---
+### 5. Configurar os Condicionais no Léxico e Bison
+- **Problema**: Houve dificuldades para implementar condicionais no analisador léxico e no analisador sintático, especialmente na definição de regras que dependem de estados específicos.
+- **Solução**: Foram utilizados ferramentas para auxílio.
+
+---
