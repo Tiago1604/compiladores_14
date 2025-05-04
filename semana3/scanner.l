@@ -2,106 +2,119 @@
 #include <stdio.h>
 %}
 
-/* Definições de padrões de token e ações */
+/* Padrões de tokens e ações correspondentes */
 %%
 
-if          { printf("KW_IF\n"); }
+"+"         { printf("OPERATOR(%s)\n", yytext); }
+"-"         { printf("OPERATOR(%s)\n", yytext); }
+"*"         { printf("OPERATOR(%s)\n", yytext); }
+"/"         { printf("OPERATOR(%s)\n", yytext); }
+"//"        { printf("OPERATOR(%s)\n", yytext); }
+"%"         { printf("OPERATOR(%s)\n", yytext); }
+"**"        { printf("OPERATOR(%s)\n", yytext); }
+"@"         { printf("OPERATOR(%s)\n", yytext); }
 
-while       { printf("KW_WHILE\n"); }
+"=="        { printf("OPERATOR(%s)\n", yytext); }
+"!="        { printf("OPERATOR(%s)\n", yytext); }
+">"         { printf("OPERATOR(%s)\n", yytext); }
+"<"         { printf("OPERATOR(%s)\n", yytext); }
+">="        { printf("OPERATOR(%s)\n", yytext); }
+"<="        { printf("OPERATOR(%s)\n", yytext); }
 
-switch      { printf("KW_SWITCH\n"); }
+"="         { printf("OPERATOR(%s)\n", yytext); }
+"+="        { printf("OPERATOR(%s)\n", yytext); }
+"-="        { printf("OPERATOR(%s)\n", yytext); }
+"*="        { printf("OPERATOR(%s)\n", yytext); }
+"/="        { printf("OPERATOR(%s)\n", yytext); }
+"//="       { printf("OPERATOR(%s)\n", yytext); }
+"%="        { printf("OPERATOR(%s)\n", yytext); }
+"**="       { printf("OPERATOR(%s)\n", yytext); }
+"@="        { printf("OPERATOR(%s)\n", yytext); }
 
-for         { printf("KW_FOR\n"); }
+"and"       { printf("OPERATOR(%s)\n", yytext); }
+"or"        { printf("OPERATOR(%s)\n", yytext); }
+"not"       { printf("OPERATOR(%s)\n", yytext); }
 
-print      { printf("KW_PRINTF\n"); }
+"in"        { printf("OPERATOR(%s)\n", yytext); }
+"not"[ \t]+"in"  { printf("OPERATOR(not in)\n"); }
 
-"("         { printf("KW_PARENTESE_ABRE\n"); }
+"is"        { printf("OPERATOR(%s)\n", yytext); }
+"is"[ \t]+"not" { printf("OPERATOR(is not)\n"); }
 
-")"         { printf("KW_PARENTESE_FECHA\n"); }
+"False"     { printf("KEYWORD(%s)\n", yytext); }
+"None"      { printf("KEYWORD(%s)\n", yytext); }
+"True"      { printf("KEYWORD(%s)\n", yytext); }
+"as"        { printf("KEYWORD(%s)\n", yytext); }
 
-":"         { printf("KW_COLON\n"); }
+"break"     { printf("KEYWORD(%s)\n", yytext); }
+"continue"  { printf("KEYWORD(%s)\n", yytext); }
+"elif"      { printf("KEYWORD(%s)\n", yytext); }
+"else"      { printf("KEYWORD(%s)\n", yytext); }
+"if"        { printf("KEYWORD(%s)\n", yytext); }
+"for"       { printf("KEYWORD(%s)\n", yytext); }
+"while"     { printf("KEYWORD(%s)\n", yytext); }
 
-","         { printf("KW_VIRGULA\n"); }
+"try"       { printf("KEYWORD(%s)\n", yytext); }
+"except"    { printf("KEYWORD(%s)\n", yytext); }
+"finally"   { printf("KEYWORD(%s)\n", yytext); }
+"raise"     { printf("KEYWORD(%s)\n", yytext); }
 
-"{"         { printf("KW_ABRE_CHAVE\n"); }
+"class"     { printf("KEYWORD(%s)\n", yytext); }
+"def"       { printf("KEYWORD(%s)\n", yytext); }
+"del"       { printf("KEYWORD(%s)\n", yytext); }
+"lambda"    { printf("KEYWORD(%s)\n", yytext); }
+"pass"      { printf("KEYWORD(%s)\n", yytext); }
+"return"    { printf("KEYWORD(%s)\n", yytext); }
+"yield"     { printf("KEYWORD(%s)\n", yytext); }
 
-"}"         { printf("KW_FECHA_CHAVE\n"); }
+"from"      { printf("KEYWORD(%s)\n", yytext); }
+"import"    { printf("KEYWORD(%s)\n", yytext); }
+"global"    { printf("KEYWORD(%s)\n", yytext); }
+"nonlocal"  { printf("KEYWORD(%s)\n", yytext); }
 
-";"         { printf("KW_PONTO_VIRGULA\n"); }
+"with"      { printf("KEYWORD(%s)\n", yytext); }
 
-"'"         { printf("KW_TEXTO_SIMBOLO\n"); }
+"("         { printf("SYMBOL(%s)\n", yytext); }
+")"         { printf("SYMBOL(%s)\n", yytext); }
+"["         { printf("SYMBOL(%s)\n", yytext); }
+"]"         { printf("SYMBOL(%s)\n", yytext); }
+"{"         { printf("SYMBOL(%s)\n", yytext); }
+"}"         { printf("SYMBOL(%s)\n", yytext); }
 
-">"         { printf("KW_MAIOR_QUE\n"); }
+":"         { printf("SYMBOL(%s)\n", yytext); }
+";"         { printf("SYMBOL(%s)\n", yytext); }
+","         { printf("SYMBOL(%s)\n", yytext); }
+"."         { printf("SYMBOL(%s)\n", yytext); }
 
-"<"         { printf("KW_MENOR_QUE\n"); }
 
-"return"    { printf("KW_RETURN\n"); }
+"'"         { printf("SYMBOL(%s)\n", yytext); }
+"\""        { printf("SYMBOL(%s)\n", yytext); }
 
-"import"    { printf("KW_IMPORT\n"); }
 
-"from"      { printf("KW_FROM\n"); }
+"_"         { printf("SYMBOL(%s)\n", yytext); }
+"\\"        { printf("SYMBOL(%s)\n", yytext); }
+"#"         { printf("SYMBOL(%s)\n", yytext); }
 
-"def"       { printf("KW_DEF\n"); }
+"//".*      { /* Comentário de linha */ }
+"/*"([^*]|\*+[^*/])*\*+\/ { /* Comentário de bloco */ }
 
-"range"     { printf("KW_RANGE\n"); }
+[a-zA-Z_][a-zA-Z0-9_]*  { printf("IDENTIFIER(%s)\n", yytext); }
+[0-9]+(\.[0-9]+)?       { printf("LITERAL_NUMBER(%s)\n", yytext); }
+\"([^\"\n\\]|\\.)*\"    { printf("LITERAL_STRING(%s)\n", yytext); }
+'([^'\n\\]|\\.)*'       { printf("LITERAL_STRING(%s)\n", yytext); }
 
-"int"       { printf("KW_INT\n"); }
+[ \t\n]+    { /* Espaços */ }
 
-"float"     { printf("KW_FLOAT\n"); }
-
-"string"    { printf("KW_STRING\n"); }
-
-"bool"      { printf("KW_BOOL\n"); }
-
-"double"    { printf("KW_DOUBLE\n"); }
-
-"in"        { printf("KW_IN\n"); }
-
-"with"      { printf("KW_WITH\n"); }
-
-"not"       { printf("KW_NOT\n"); }
-
-"try"       { printf("KW_TRY\n"); }
-
-"except"    { printf("KW_EXCEPT\n"); }
-
-"break"     { printf("KW_BREAK\n"); }
-
-"continue"  { printf("KW_CONTINUE\n"); }
-
-"or"        { printf("KW_OR\n"); }
-
-"and"       { printf("KW_AND\n"); }
-
-"elif"      { printf("KW_ELIF\n"); }
-
-"class"     { printf("KW_CLASS\n"); }
-"//".*     { /* Ignorar comentários de linha */ }
-
-"/*"([^*]|\*+[^*/])*\*+\/    { /* Ignorar comentários de bloco */ }
-
-[a-zA-Z_][a-zA-Z0-9_]*  { printf("IDENT(%s)\n", yytext); }
-
-[0-9]+(\.[0-9]+)?  { printf("NUMBER(%s)\n", yytext); }
-
-[+\-*/=%]   { printf("OPERATOR(%s)\n", yytext); }
-
-[ \t\n]+  { /* Não faz nada */ }
-
-\"([^\"\n\\]|\\.)*\"  { printf("STRING(%s)\n", yytext); }
-
-'([^'\n\\]|\\.)*'     { printf("STRING(%s)\n", yytext); }
-
-.  { printf("UNKNOWN(%s)\n", yytext); }
+.           { printf("UNKNOWN_CHAR(%s)\n", yytext); }
 
 %%
 
-/* Função auxiliar do Flex (quando termina o arquivo de entrada) */
+/* Função para finalizar análise */
 int yywrap(void) {
     return 1;
 }
 
-/* Função principal: executa o analisador léxico */
+/* Ponto de entrada principal */
 int main(void) {
     yylex();
     return 0;
