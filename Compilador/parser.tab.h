@@ -74,7 +74,39 @@ extern int yydebug;
     PLUS = 275,                    /* PLUS  */
     MINUS = 276,                   /* MINUS  */
     TIMES = 277,                   /* TIMES  */
-    DIVIDE = 278                   /* DIVIDE  */
+    DIVIDE = 278,                  /* DIVIDE  */
+    FLOAT = 279,                   /* FLOAT  */
+    CHAR = 280,                    /* CHAR  */
+    RETURN = 281,                  /* RETURN  */
+    WHILE = 282,                   /* WHILE  */
+    FOR = 283,                     /* FOR  */
+    BREAK = 284,                   /* BREAK  */
+    CONTINUE = 285,                /* CONTINUE  */
+    TRUE = 286,                    /* TRUE  */
+    FALSE = 287,                   /* FALSE  */
+    NONE = 288,                    /* NONE  */
+    NOT = 289,                     /* NOT  */
+    AND = 290,                     /* AND  */
+    OR = 291,                      /* OR  */
+    IS = 292,                      /* IS  */
+    LAMBDA = 293,                  /* LAMBDA  */
+    DEL = 294,                     /* DEL  */
+    GLOBAL = 295,                  /* GLOBAL  */
+    NONLOCAL = 296,                /* NONLOCAL  */
+    ASSERT = 297,                  /* ASSERT  */
+    RAISE = 298,                   /* RAISE  */
+    TRY = 299,                     /* TRY  */
+    EXCEPT = 300,                  /* EXCEPT  */
+    FINALLY = 301,                 /* FINALLY  */
+    WITH = 302,                    /* WITH  */
+    YIELD = 303,                   /* YIELD  */
+    DEF = 304,                     /* DEF  */
+    CLASS = 305,                   /* CLASS  */
+    ASYNC = 306,                   /* ASYNC  */
+    AWAIT = 307,                   /* AWAIT  */
+    MATCH = 308,                   /* MATCH  */
+    CASE = 309,                    /* CASE  */
+    TYPE = 310                     /* TYPE  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -88,8 +120,10 @@ union YYSTYPE
     int intValue;
     char* id;
     char* str;
+    float floatValue;
+    char charValue;
 
-#line 93 "parser.tab.h"
+#line 127 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -11,15 +11,24 @@ void yyerror(const char *s);
     int intValue;
     char* id;
     char* str;
+    float floatValue;
+    char charValue;
 }
 
 %token EQ NEQ GE LE GT LT
 %token IF ELSE COLON
 %token <id> ID
 %token <intValue> NUM
-%token PRINT INT
+%token PRINT INT 
 %token ASSIGN SEMICOLON LPAREN RPAREN
 %token PLUS MINUS TIMES DIVIDE
+%token FLOAT CHAR RETURN WHILE FOR
+%token BREAK CONTINUE TRUE FALSE NONE
+%token NOT AND OR IS LAMBDA
+%token DEL GLOBAL NONLOCAL ASSERT
+%token RAISE TRY EXCEPT FINALLY WITH
+%token YIELD DEF CLASS
+%token ASYNC AWAIT MATCH CASE TYPE
 
 %type <intValue> expr
 %type <str> comp         //(>, <, etc)
@@ -32,13 +41,36 @@ program:
     |
     ;
 stmt:
-    decl SEMICOLON           // Declaração seguida de ponto e vírgula
-    | assign SEMICOLON       // Atribuição seguida de ponto e vírgula
-    | print SEMICOLON        // Print seguido de ponto e vírgula
-    | if_stmt                //"if"
+    decl
+    | assign
+    | print
+    | if_stmt
+    ;
+decl:
+    INT ID
+    {
+        printf("int %s;\n", $2);
+        free($2);
+    }
+    ;
+assign:
+    ID ASSIGN expr
+    {
+        printf("%s = %d;\n", $1, $3);
+    }
+    ;
+print:
+    PRINT LPAREN ID RPAREN
+    {
+        printf("printf(\"%%d\\n\", %s);\n", $3);
+    }
+    | PRINT LPAREN NUM RPAREN
+    {
+        printf("printf(\"%%d\\n\", %d);\n", $3);
+    }
     ;
 if_stmt:
-    //if sem else
+//if sem else
     IF LPAREN cond RPAREN COLON stmt
     {
         printf("if (%s) {\n}\n", $3);
@@ -49,16 +81,6 @@ if_stmt:
     {
         printf("if (%s) {\n} else {\n}\n", $3);
         free($3);
-    }
-    //if usando um identificador
-    | IF ID COLON stmt
-    {
-        printf("if (%s) {\n}\n", $2);
-    }
-    //if-else usando identificador
-    | IF ID COLON stmt ELSE COLON stmt
-    {
-        printf("if (%s) {\n} else {\n}\n", $2);
     }
     ;
 cond:
@@ -78,28 +100,6 @@ comp:
     | LE { $$ = strdup("<="); }
     | EQ { $$ = strdup("=="); }
     | NEQ { $$ = strdup("!="); }
-    ;
-decl:
-    INT ID
-    {
-        printf("int %s;\n", $2);
-    }
-    ;
-assign:
-    ID ASSIGN expr
-    {
-        printf("%s = %d;\n", $1, $3);
-    }
-    ;
-print:
-    PRINT LPAREN ID RPAREN
-    {
-        printf("printf(\"%%d\\n\", %s);\n", $3);
-    }
-    | PRINT LPAREN NUM RPAREN
-    {
-        printf("printf(\"%%d\\n\", %d);\n", $3);
-    }
     ;
 expr:
     NUM { $$ = $1; }
