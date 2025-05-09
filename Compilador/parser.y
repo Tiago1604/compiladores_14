@@ -2,9 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "types.h"
 
 int yylex(void);
 void yyerror(const char *s);
+void type_error(const char* expected, const char* got, const char* var_name);
+
+// Array simples para armazenar variáveis
+Variable variables[100];
+int var_count = 0;
 %}
 
 
@@ -56,6 +62,18 @@ stmt:
 decl:
     INT ID
     {
+        // Verifica se variável já foi declarada
+        for (int i = 0; i < var_count; i++) {
+            if (strcmp(variables[i].name, $2) == 0) {
+                fprintf(stderr, "Erro: Variável '%s' já foi declarada\n", $2);
+                YYERROR;
+            }
+        }
+        
+        // Adiciona variável à tabela de símbolos
+        variables[var_count].name = strdup($2);
+        variables[var_count].type = TYPE_INT;
+        var_count++;
         printf("int %s;\n", $2);
         free($2);
     }
@@ -63,7 +81,22 @@ decl:
 assign:
     ID ASSIGN expr
     {
-        printf("%s = %d;\n", $1, $3);
+        // Procura a variável na tabela de símbolos
+        int found = 0;
+        for (int i = 0; i < var_count; i++) {
+            if (strcmp(variables[i].name, $1) == 0) {
+                found = 1;
+                if (variables[i].type == TYPE_INT) {
+                    printf("%s = %d;\n", $1, $3);
+                }
+                break;
+            }
+        }
+        if (!found) {
+            fprintf(stderr, "Erro: Variável '%s' não foi declarada\n", $1);
+            YYERROR;
+        }
+        free($1);
     }
     ;
 print:
@@ -127,6 +160,7 @@ expr:
 
 %%
 
+
 void yyerror(const char *s) {
     switch(yychar) {
         case INT:
@@ -170,4 +204,9 @@ void yyerror(const char *s) {
         default:
             fprintf(stderr, "Erro sintático: %s\n", s);
     }
+}
+
+void type_error(const char* expected, const char* got, const char* var_name) {
+    fprintf(stderr, "Erro de tipo: Variável '%s' é do tipo '%s', mas recebeu valor do tipo '%s'\n",
+            var_name, expected, got);
 }

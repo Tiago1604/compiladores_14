@@ -72,11 +72,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "types.h"
 
 int yylex(void);
 void yyerror(const char *s);
+void type_error(const char* expected, const char* got, const char* var_name);
 
-#line 80 "parser.tab.c"
+// Array simples para armazenar variáveis
+Variable variables[100];
+int var_count = 0;
+
+#line 86 "parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -559,11 +565,11 @@ static const yytype_int8 yytranslate[] =
 
 #if YYDEBUG
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
-static const yytype_int8 yyrline[] =
+static const yytype_uint8 yyrline[] =
 {
-       0,    47,    47,    48,    51,    52,    53,    54,    57,    64,
-      70,    74,    81,    87,    94,   101,   104,   105,   106,   107,
-     108,   109,   112,   113,   114,   115,   116,   117,   118
+       0,    53,    53,    54,    57,    58,    59,    60,    63,    82,
+     103,   107,   114,   120,   127,   134,   137,   138,   139,   140,
+     141,   142,   145,   146,   147,   148,   149,   150,   151
 };
 #endif
 
@@ -1156,147 +1162,174 @@ yyreduce:
   switch (yyn)
     {
   case 8: /* decl: INT ID  */
-#line 58 "parser.y"
+#line 64 "parser.y"
     {
+        // Verifica se variável já foi declarada
+        for (int i = 0; i < var_count; i++) {
+            if (strcmp(variables[i].name, (yyvsp[0].id)) == 0) {
+                fprintf(stderr, "Erro: Variável '%s' já foi declarada\n", (yyvsp[0].id));
+                YYERROR;
+            }
+        }
+        
+        // Adiciona variável à tabela de símbolos
+        variables[var_count].name = strdup((yyvsp[0].id));
+        variables[var_count].type = TYPE_INT;
+        var_count++;
         printf("int %s;\n", (yyvsp[0].id));
         free((yyvsp[0].id));
     }
-#line 1165 "parser.tab.c"
+#line 1183 "parser.tab.c"
     break;
 
   case 9: /* assign: ID ASSIGN expr  */
-#line 65 "parser.y"
+#line 83 "parser.y"
     {
-        printf("%s = %d;\n", (yyvsp[-2].id), (yyvsp[0].intValue));
+        // Procura a variável na tabela de símbolos
+        int found = 0;
+        for (int i = 0; i < var_count; i++) {
+            if (strcmp(variables[i].name, (yyvsp[-2].id)) == 0) {
+                found = 1;
+                if (variables[i].type == TYPE_INT) {
+                    printf("%s = %d;\n", (yyvsp[-2].id), (yyvsp[0].intValue));
+                }
+                break;
+            }
+        }
+        if (!found) {
+            fprintf(stderr, "Erro: Variável '%s' não foi declarada\n", (yyvsp[-2].id));
+            YYERROR;
+        }
+        free((yyvsp[-2].id));
     }
-#line 1173 "parser.tab.c"
+#line 1206 "parser.tab.c"
     break;
 
   case 10: /* print: PRINT LPAREN ID RPAREN  */
-#line 71 "parser.y"
+#line 104 "parser.y"
     {
         printf("printf(\"%%d\\n\", %s);\n", (yyvsp[-1].id));
     }
-#line 1181 "parser.tab.c"
+#line 1214 "parser.tab.c"
     break;
 
   case 11: /* print: PRINT LPAREN NUM RPAREN  */
-#line 75 "parser.y"
+#line 108 "parser.y"
     {
         printf("printf(\"%%d\\n\", %d);\n", (yyvsp[-1].intValue));
     }
-#line 1189 "parser.tab.c"
+#line 1222 "parser.tab.c"
     break;
 
   case 12: /* if_stmt: IF LPAREN cond RPAREN COLON stmt  */
-#line 82 "parser.y"
+#line 115 "parser.y"
     {
         printf("if (%s) {\n}\n", (yyvsp[-3].id));
         free((yyvsp[-3].id));
     }
-#line 1198 "parser.tab.c"
+#line 1231 "parser.tab.c"
     break;
 
   case 13: /* if_stmt: IF LPAREN cond RPAREN COLON stmt ELSE COLON stmt  */
-#line 88 "parser.y"
+#line 121 "parser.y"
     {
         printf("if (%s) {\n} else {\n}\n", (yyvsp[-6].id));
         free((yyvsp[-6].id));
     }
-#line 1207 "parser.tab.c"
+#line 1240 "parser.tab.c"
     break;
 
   case 14: /* cond: expr comp expr  */
-#line 95 "parser.y"
+#line 128 "parser.y"
     {
         char buffer[256];
         sprintf(buffer, "%d %s %d", (yyvsp[-2].intValue), (yyvsp[-1].str), (yyvsp[0].intValue)); //"5 > 3"
         (yyval.id) = strdup(buffer);
         free((yyvsp[-1].str));
     }
-#line 1218 "parser.tab.c"
+#line 1251 "parser.tab.c"
     break;
 
   case 15: /* cond: ID  */
-#line 101 "parser.y"
+#line 134 "parser.y"
          { (yyval.id) = strdup((yyvsp[0].id)); }
-#line 1224 "parser.tab.c"
+#line 1257 "parser.tab.c"
     break;
 
   case 16: /* comp: GT  */
-#line 104 "parser.y"
+#line 137 "parser.y"
        { (yyval.str) = strdup(">"); }
-#line 1230 "parser.tab.c"
+#line 1263 "parser.tab.c"
     break;
 
   case 17: /* comp: LT  */
-#line 105 "parser.y"
+#line 138 "parser.y"
          { (yyval.str) = strdup("<"); }
-#line 1236 "parser.tab.c"
+#line 1269 "parser.tab.c"
     break;
 
   case 18: /* comp: GE  */
-#line 106 "parser.y"
+#line 139 "parser.y"
          { (yyval.str) = strdup(">="); }
-#line 1242 "parser.tab.c"
+#line 1275 "parser.tab.c"
     break;
 
   case 19: /* comp: LE  */
-#line 107 "parser.y"
+#line 140 "parser.y"
          { (yyval.str) = strdup("<="); }
-#line 1248 "parser.tab.c"
+#line 1281 "parser.tab.c"
     break;
 
   case 20: /* comp: EQ  */
-#line 108 "parser.y"
+#line 141 "parser.y"
          { (yyval.str) = strdup("=="); }
-#line 1254 "parser.tab.c"
+#line 1287 "parser.tab.c"
     break;
 
   case 21: /* comp: NEQ  */
-#line 109 "parser.y"
+#line 142 "parser.y"
           { (yyval.str) = strdup("!="); }
-#line 1260 "parser.tab.c"
+#line 1293 "parser.tab.c"
     break;
 
   case 22: /* expr: NUM  */
-#line 112 "parser.y"
+#line 145 "parser.y"
         { (yyval.intValue) = (yyvsp[0].intValue); }
-#line 1266 "parser.tab.c"
+#line 1299 "parser.tab.c"
     break;
 
   case 23: /* expr: ID  */
-#line 113 "parser.y"
+#line 146 "parser.y"
          { (yyval.intValue) = 0; }
-#line 1272 "parser.tab.c"
+#line 1305 "parser.tab.c"
     break;
 
   case 24: /* expr: LPAREN expr RPAREN  */
-#line 114 "parser.y"
+#line 147 "parser.y"
                          { (yyval.intValue) = (yyvsp[-1].intValue); }
-#line 1278 "parser.tab.c"
+#line 1311 "parser.tab.c"
     break;
 
   case 25: /* expr: expr PLUS expr  */
-#line 115 "parser.y"
+#line 148 "parser.y"
                      { (yyval.intValue) = (yyvsp[-2].intValue) + (yyvsp[0].intValue); }
-#line 1284 "parser.tab.c"
+#line 1317 "parser.tab.c"
     break;
 
   case 26: /* expr: expr MINUS expr  */
-#line 116 "parser.y"
+#line 149 "parser.y"
                       { (yyval.intValue) = (yyvsp[-2].intValue) - (yyvsp[0].intValue); }
-#line 1290 "parser.tab.c"
+#line 1323 "parser.tab.c"
     break;
 
   case 27: /* expr: expr TIMES expr  */
-#line 117 "parser.y"
+#line 150 "parser.y"
                       { (yyval.intValue) = (yyvsp[-2].intValue) * (yyvsp[0].intValue); }
-#line 1296 "parser.tab.c"
+#line 1329 "parser.tab.c"
     break;
 
   case 28: /* expr: expr DIVIDE expr  */
-#line 118 "parser.y"
+#line 151 "parser.y"
                        { 
         if ((yyvsp[0].intValue) == 0) {
             fprintf(stderr, "Erro: Divisão por zero\n");
@@ -1305,11 +1338,11 @@ yyreduce:
             (yyval.intValue) = (yyvsp[-2].intValue) / (yyvsp[0].intValue); 
         }
     }
-#line 1309 "parser.tab.c"
+#line 1342 "parser.tab.c"
     break;
 
 
-#line 1313 "parser.tab.c"
+#line 1346 "parser.tab.c"
 
       default: break;
     }
@@ -1502,7 +1535,8 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 128 "parser.y"
+#line 161 "parser.y"
+
 
 
 void yyerror(const char *s) {
@@ -1548,4 +1582,9 @@ void yyerror(const char *s) {
         default:
             fprintf(stderr, "Erro sintático: %s\n", s);
     }
+}
+
+void type_error(const char* expected, const char* got, const char* var_name) {
+    fprintf(stderr, "Erro de tipo: Variável '%s' é do tipo '%s', mas recebeu valor do tipo '%s'\n",
+            var_name, expected, got);
 }
