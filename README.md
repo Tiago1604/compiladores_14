@@ -39,6 +39,9 @@ Essa estrutura foi projetada para organizar o projeto de forma clara, separando 
 
 3. **Entre em Compilador**
     - Para compilar manualmente:
+   ```
+    cd Compilador
+    ```
     ```
     bison -d parser.y
     ```

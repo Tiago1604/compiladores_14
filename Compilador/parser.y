@@ -7,6 +7,8 @@ int yylex(void);
 void yyerror(const char *s);
 %}
 
+
+
 %union {
     int intValue;
     char* id;
@@ -33,6 +35,11 @@ void yyerror(const char *s);
 %type <intValue> expr
 %type <str> comp         //(>, <, etc)
 %type <id> cond          //condicao
+
+%left PLUS MINUS    // Lower precedence
+%left TIMES DIVIDE  // Higher precedence
+%nonassoc COLON
+%nonassoc ELSE     // Resolve the dangling else problem
 
 %%
 
@@ -104,15 +111,63 @@ comp:
 expr:
     NUM { $$ = $1; }
     | ID { $$ = 0; }
+    | LPAREN expr RPAREN { $$ = $2; }
     | expr PLUS expr { $$ = $1 + $3; }
     | expr MINUS expr { $$ = $1 - $3; }
     | expr TIMES expr { $$ = $1 * $3; }
-    | expr DIVIDE expr { $$ = $1 / $3; }
-    | LPAREN expr RPAREN { $$ = $2; }
+    | expr DIVIDE expr { 
+        if ($3 == 0) {
+            fprintf(stderr, "Erro: Divisão por zero\n");
+            $$ = 0;
+        } else {
+            $$ = $1 / $3; 
+        }
+    }
     ;
 
 %%
 
 void yyerror(const char *s) {
-    fprintf(stderr, "Erro sintático: %s\n", s);
+    switch(yychar) {
+        case INT:
+            if (yylval.id == NULL)
+                fprintf(stderr, "Erro: Declaração 'int' deve ser seguida de um identificador válido\n");
+            break;
+            
+        case ASSIGN:
+            fprintf(stderr, "Erro: Atribuição inválida. Formato correto: identificador = expressão\n");
+            break;
+            
+        case ID:
+            fprintf(stderr, "Erro: Uso incorreto de identificador '%s'\n", yylval.id);
+            break;
+            
+        case NUM:
+            fprintf(stderr, "Erro: Uso incorreto do número '%d'\n", yylval.intValue);
+            break;
+            
+        case PRINT:
+            fprintf(stderr, "Erro: Comando print mal formatado. Use: print(expressão)\n");
+            break;
+            
+        case IF:
+            fprintf(stderr, "Erro: Estrutura if mal formatada. Use: if (condição) : comando\n");
+            break;
+            
+        case ELSE:
+            fprintf(stderr, "Erro: else deve ser precedido por um if\n");
+            break;
+            
+        case COLON:
+            fprintf(stderr, "Erro: ':' usado incorretamente\n");
+            break;
+            
+        case LPAREN:
+        case RPAREN:
+            fprintf(stderr, "Erro: Parênteses não balanceados\n");
+            break;
+            
+        default:
+            fprintf(stderr, "Erro sintático: %s\n", s);
+    }
 }
