@@ -1,24 +1,29 @@
 %{
-#include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "parser.tab.h"
 %}
 
-%% 
+%option yylineno
 
-[ \t\n]            ;          // Ignorar espaços, tabulação, nova linha
+%%
+
+[ \t\r]            ; // Ignorar espaços, tabulação
+[\n]               ; // Ignorar nova linha
 "print"            { return PRINT; }
 "if"               { return IF; }
 "else"             { return ELSE; }
 "int"              { return INT; }
-"float"            { /* FLOAT reconhecido */  }
-"char"             { /* CHAR reconhecido */  }
-"return"           { /* RETURN reconhecido */  }
-"while"            { /* WHILE reconhecido */  }
-"for"              { /* FOR reconhecido */  }
-"break"            { /* BREAK reconhecido */  }
-"continue"         { /* CONTINUE reconhecido */  }
+"float"            { return FLOAT; }
+"char"             { /* CHAR reconhecido, mas não processado nesta versão */ }
+"return"           { /* RETURN reconhecido, mas não processado nesta versão */ }
+"while"            { /* WHILE reconhecido, mas não processado nesta versão */ }
+"for"              { /* FOR reconhecido, mas não processado nesta versão */ }
+"break"            { /* BREAK reconhecido, mas não processado nesta versão */ }
+"continue"         { /* CONTINUE reconhecido, mas não processado nesta versão */ }
 [0-9]+             { yylval.intValue = atoi(yytext); return NUM; }
+[0-9]+\.[0-9]+     { yylval.floatValue = atof(yytext); return FLOAT_NUM; }
 [a-zA-Z_][a-zA-Z0-9_]* { yylval.id = strdup(yytext); return ID; }
 "=="               { return EQ; }
 "!="               { return NEQ; }
@@ -35,8 +40,8 @@
 "*"                { return TIMES; }
 "/"                { return DIVIDE; }
 ":"                { return COLON; }
-
-[ \t\n]+  { /* não faz nada */ }
+"//".*             ; // Comentários de linha única
+[/][*][^*]*[*]+([^*/][^*]*[*]+)*[/] ; // Comentários de múltiplas linhas
 
 .        { printf("Caractere não reconhecido: %s\n", yytext); }
 
@@ -44,17 +49,4 @@
 
 int yywrap(void) {
     return 1;
-}
-
-int main(int argc, char **argv) {
-    if (argc > 1) {
-        FILE *f = fopen(argv[1], "r");
-        if (!f) {
-            fprintf(stderr, "Erro ao abrir arquivo: %s\n", argv[1]);
-            return 1;
-        }
-        yyin = f;
-    }
-
-    return yyparse();
 }

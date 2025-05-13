@@ -1,6 +1,20 @@
+// Exemplo de código fonte para testar o compilador
 int x;
-x = 5;
-if (x) : 
-    print(x);
+int y;
+int z;
+float f;
+
+x = 10;
+y = a + 20;
+
+if (x > 5):
+    z = 30;
+
+if (x < 10): 
+    z = 40;
 else:
-    print(0);
+    z = 50;
+
+print(x);
+print(y);
+print(z);
