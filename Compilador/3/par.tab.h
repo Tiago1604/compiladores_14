@@ -46,18 +46,19 @@
      atribuicao_igual = 262,
      comando_print = 263,
      comando_if = 264,
-     comparador_igual = 265,
-     comparador_diferente = 266,
-     comparador_maior_que = 267,
-     comparador_menor_que = 268,
-     comparador_maior_igual = 269,
-     comparador_menor_igual = 270,
-     NUM = 271,
-     ID = 272,
-     caracter_abreParentese = 273,
-     caracter_fechaParentese = 274,
-     caracter_doispontos = 275,
-     FRASE = 276
+     comando_else = 265,
+     comparador_igual = 266,
+     comparador_diferente = 267,
+     comparador_maior_que = 268,
+     comparador_menor_que = 269,
+     comparador_maior_igual = 270,
+     comparador_menor_igual = 271,
+     NUM = 272,
+     ID = 273,
+     caracter_abreParentese = 274,
+     caracter_fechaParentese = 275,
+     caracter_doispontos = 276,
+     FRASE = 277
    };
 #endif
 /* Tokens.  */
@@ -68,18 +69,19 @@
 #define atribuicao_igual 262
 #define comando_print 263
 #define comando_if 264
-#define comparador_igual 265
-#define comparador_diferente 266
-#define comparador_maior_que 267
-#define comparador_menor_que 268
-#define comparador_maior_igual 269
-#define comparador_menor_igual 270
-#define NUM 271
-#define ID 272
-#define caracter_abreParentese 273
-#define caracter_fechaParentese 274
-#define caracter_doispontos 275
-#define FRASE 276
+#define comando_else 265
+#define comparador_igual 266
+#define comparador_diferente 267
+#define comparador_maior_que 268
+#define comparador_menor_que 269
+#define comparador_maior_igual 270
+#define comparador_menor_igual 271
+#define NUM 272
+#define ID 273
+#define caracter_abreParentese 274
+#define caracter_fechaParentese 275
+#define caracter_doispontos 276
+#define FRASE 277
 
 
 
@@ -93,7 +95,7 @@ typedef union YYSTYPE
     char* str;
 }
 /* Line 1529 of yacc.c.  */
-#line 97 "par.tab.h"
+#line 99 "par.tab.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1

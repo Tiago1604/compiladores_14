@@ -13,102 +13,130 @@ void yyerror(const char *s);
     char* str;
 }
 
-%token EQ NEQ GE LE GT LT
-%token IF ELSE COLON
-%token <id> ID
-%token <intValue> NUM
-%token PRINT INT
-%token ASSIGN SEMICOLON LPAREN RPAREN
-%token PLUS MINUS TIMES DIVIDE
+%token <str> operador_mais
+%token <str> operador_menos
+%token <str> operador_multiplicacao
+%token <str> operador_divisao
 
-%type <intValue> expr
-%type <str> comp         //(>, <, etc)
-%type <id> cond          //condicao
+%token <str> atribuicao_igual
+
+%token comando_print
+%token comando_if
+%token comando_else
+
+%token <str> comparador_igual
+%token <str> comparador_diferente
+%token <str> comparador_maior_que
+%token <str> comparador_menor_que
+%token <str> comparador_maior_igual
+%token <str> comparador_menor_igual
+
+%token <intValue> NUM
+%token <id> ID
+%token caracter_abreParentese
+%token caracter_fechaParentese
+%token caracter_doispontos
+%token <str> FRASE
+
+
+%type <str> expressao
+%type <str> comparador
+%type <str> comparacao
+%type <str> stmt statement print condicional
+
 
 %%
-
 program:
-    program stmt            
+    program stmt
     |
     ;
+
 stmt:
-    decl SEMICOLON           // Declaração seguida de ponto e vírgula
-    | assign SEMICOLON       // Atribuição seguida de ponto e vírgula
-    | print SEMICOLON        // Print seguido de ponto e vírgula
-    | if_stmt                //"if"
+    statement { $$ = $1; }
+    | print    { $$ = $1; }
+    | condicional { $$ = $1; }
     ;
-if_stmt:
-    //if sem else
-    IF LPAREN cond RPAREN COLON stmt
-    {
-        printf("if (%s) {\n}\n", $3);
-        free($3);
-    }
-    //if-else
-    | IF LPAREN cond RPAREN COLON stmt ELSE COLON stmt
-    {
-        printf("if (%s) {\n} else {\n}\n", $3);
-        free($3);
-    }
-    //if usando um identificador
-    | IF ID COLON stmt
-    {
-        printf("if (%s) {\n}\n", $2);
-    }
-    //if-else usando identificador
-    | IF ID COLON stmt ELSE COLON stmt
-    {
-        printf("if (%s) {\n} else {\n}\n", $2);
+
+
+
+statement:
+    ID atribuicao_igual expressao {
+        char buffer[256];
+        sprintf(buffer, "int %s = %s;", $1, $3);
+        printf("%s\n", buffer);       // imprime o código C no terminal
+        $$ = strdup(buffer);          // retorna o valor formatado
     }
     ;
-cond:
-    expr comp expr
+
+expressao:
+    NUM { 
+        char buffer[20];
+        sprintf(buffer, "%d", yylval.intValue);
+        $$ = strdup(buffer);
+    }
+    | ID {
+        $$ = strdup($1);
+    }
+    | expressao operador_mais expressao 
     {
         char buffer[256];
-        sprintf(buffer, "%d %s %d", $1, $2, $3); //"5 > 3"
+        sprintf(buffer, "%s + %s", $1, $3);
+        $$ = strdup(buffer);
+    }
+    | expressao operador_menos expressao 
+    {
+        char buffer[256];
+        sprintf(buffer, "%s - %s", $1, $3);
+        $$ = strdup(buffer);
+    }
+    | expressao operador_multiplicacao expressao 
+    {
+        char buffer[256];
+        sprintf(buffer, "%s * %s", $1, $3);
+        $$ = strdup(buffer);
+    }
+    | expressao operador_divisao expressao 
+    {
+        char buffer[256];
+        sprintf(buffer, "%s / %s", $1, $3);
+        $$ = strdup(buffer);
+    }
+    ;
+
+
+
+print:
+    comando_print caracter_abreParentese ID caracter_fechaParentese { printf("printf(\"%%d\\n\", %s);\n", $3); }
+    | comando_print caracter_abreParentese NUM caracter_fechaParentese { printf("printf(\"%%d\\n\", %d);\n", $3); }
+    | comando_print caracter_abreParentese FRASE caracter_fechaParentese { printf("printf(%s);\n", $3); }
+    ;
+
+condicional:
+    // if x > x: instrucao
+    comando_if comparacao caracter_doispontos stmt{ printf("if (%s) {\n%s\n}\n", $2, $4); }
+    // if x > x: intrucao else: instrucao
+    | comando_if comparacao caracter_doispontos stmt comando_else caracter_doispontos stmt { printf("if (%s) {\n%s\n} else {\n%s\n}\n", $2, $4, $7); }
+    | comando_if ID caracter_doispontos stmt{ printf("if (%s) {\n%s\n}\n", $2, $4); }
+    | comando_if ID caracter_doispontos stmt comando_else caracter_doispontos stmt { printf("if (%s) {\n%s\n} else {\n%s\n}\n", $2, $4, $7); }
+
+
+comparacao:
+    expressao comparador expressao 
+    {
+        char buffer[256];
+        sprintf(buffer, "%s %s %s", $1, $2, $3); //"5 > 3"
         $$ = strdup(buffer);
         free($2);
     }
-    | ID { $$ = strdup($1); }
     ;
-comp:
-    GT { $$ = strdup(">"); }
-    | LT { $$ = strdup("<"); }
-    | GE { $$ = strdup(">="); }
-    | LE { $$ = strdup("<="); }
-    | EQ { $$ = strdup("=="); }
-    | NEQ { $$ = strdup("!="); }
-    ;
-decl:
-    INT ID
-    {
-        printf("int %s;\n", $2);
-    }
-    ;
-assign:
-    ID ASSIGN expr
-    {
-        printf("%s = %d;\n", $1, $3);
-    }
-    ;
-print:
-    PRINT LPAREN ID RPAREN
-    {
-        printf("printf(\"%%d\\n\", %s);\n", $3);
-    }
-    | PRINT LPAREN NUM RPAREN
-    {
-        printf("printf(\"%%d\\n\", %d);\n", $3);
-    }
-    ;
-expr:
-    NUM { $$ = $1; }
-    | ID { $$ = 0; }
-    | expr PLUS expr { $$ = $1 + $3; }
-    | expr MINUS expr { $$ = $1 - $3; }
-    | expr TIMES expr { $$ = $1 * $3; }
-    | expr DIVIDE expr { $$ = $1 / $3; }
-    | LPAREN expr RPAREN { $$ = $2; }
+
+comparador:
+    comparador_igual            { $$ = $1; }
+    | comparador_diferente      { $$ = $1; }
+    | comparador_maior_que      { $$ = $1; }
+    | comparador_menor_que      { $$ = $1; }
+    | comparador_maior_igual    { $$ = $1; }
+    | comparador_menor_igual    { $$ = $1; }
     ;
 
 %%

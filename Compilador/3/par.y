@@ -22,6 +22,7 @@ void yyerror(const char *s);
 
 %token comando_print
 %token comando_if
+%token comando_else
 
 %token <str> comparador_igual
 %token <str> comparador_diferente
@@ -41,6 +42,8 @@ void yyerror(const char *s);
 %type <str> expressao
 %type <str> comparador
 %type <str> comparacao
+%type <str> stmt statement print condicional
+
 
 %%
 program:
@@ -49,13 +52,20 @@ program:
     ;
 
 stmt:
-    statement
-    | print
-    | condicional
+    statement { $$ = $1; }
+    | print    { $$ = $1; }
+    | condicional { $$ = $1; }
+    ;
+
 
 
 statement:
-    ID atribuicao_igual expressao { printf("int %s = %s;\n", $1, $3); }
+    ID atribuicao_igual expressao {
+        char buffer[256];
+        // Formata a string para gerar a declaração no estilo C
+        sprintf(buffer, "int %s = %s;", $1, $3);
+        $$ = strdup(buffer); // Retorna a string formatada
+    }
     ;
 
 expressao:
@@ -98,11 +108,17 @@ expressao:
 print:
     comando_print caracter_abreParentese ID caracter_fechaParentese { printf("printf(\"%%d\\n\", %s);\n", $3); }
     | comando_print caracter_abreParentese NUM caracter_fechaParentese { printf("printf(\"%%d\\n\", %d);\n", $3); }
-    | comando_print caracter_abreParentese FRASE caracter_fechaParentese { printf("é o print:\nprintf(%s);\n", $3); }
+    | comando_print caracter_abreParentese FRASE caracter_fechaParentese { printf("printf(%s);\n", $3); }
     ;
 
 condicional:
-    comando_if comparacao caracter_doispontos { printf("if(%s){ }\n", $2); }
+    // if x > x: instrucao
+    comando_if comparacao caracter_doispontos stmt{ printf("if (%s) {\n%s\n}\n", $2, $4); }
+    // if x > x: intrucao else: instrucao
+    | comando_if comparacao caracter_doispontos stmt comando_else caracter_doispontos stmt { printf("if (%s) {\n%s\n} else {\n%s\n}\n", $2, $4, $7); }
+    | comando_if ID caracter_doispontos stmt{ printf("if (%s) {\n%s\n}\n", $2, $4); }
+    | comando_if ID caracter_doispontos stmt comando_else caracter_doispontos stmt { printf("if (%s) {\n%s\n} else {\n%s\n}\n", $2, $4, $7); }
+
 
 comparacao:
     expressao comparador expressao 

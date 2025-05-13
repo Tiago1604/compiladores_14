@@ -18,6 +18,7 @@ extern int yyparse(void);
 
 "print"         { return comando_print; }
 "if"            { return comando_if; }
+"else"            { return comando_else; }
 
 "("             { return caracter_abreParentese; }
 ")"             { return caracter_fechaParentese; }

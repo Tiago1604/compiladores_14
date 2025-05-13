@@ -7,40 +7,38 @@ extern int yyparse(void);
 %}
 
 %% 
-
 [ \t\n]            ;          // Ignorar espaços, tabulação, nova linha
-"print"            { return PRINT; }
-"if"               { return IF; }
-"else"             { return ELSE; }
-"int"              { return INT; }
-"float"            { /* FLOAT reconhecido */  }
-"char"             { /* CHAR reconhecido */  }
-"return"           { /* RETURN reconhecido */  }
-"while"            { /* WHILE reconhecido */  }
-"for"              { /* FOR reconhecido */  }
-"break"            { /* BREAK reconhecido */  }
-"continue"         { /* CONTINUE reconhecido */  }
+
+"+"         { return operador_mais; }
+"-"         { return operador_menos; }
+"*"         { return operador_multiplicacao; }
+"/"         { return operador_divisao; }
+
+"="         { return atribuicao_igual; }
+
+"print"         { return comando_print; }
+"if"            { return comando_if; }
+"else"            { return comando_else; }
+
+"("             { return caracter_abreParentese; }
+")"             { return caracter_fechaParentese; }
+":"             { return caracter_doispontos; }
+
+"=="   { yylval.str = strdup("=="); return comparador_igual; }
+"!="   { yylval.str = strdup("!="); return comparador_diferente; }
+">"    { yylval.str = strdup(">"); return comparador_maior_que; }
+"<"    { yylval.str = strdup("<"); return comparador_menor_que; }
+">="   { yylval.str = strdup(">="); return comparador_maior_igual; }
+"<="   { yylval.str = strdup("<="); return comparador_menor_igual; }
+
+\"([^"]*)\" {yylval.str = strdup(yytext);  return FRASE;}
+
 [0-9]+             { yylval.intValue = atoi(yytext); return NUM; }
 [a-zA-Z_][a-zA-Z0-9_]* { yylval.id = strdup(yytext); return ID; }
-"=="               { return EQ; }
-"!="               { return NEQ; }
-">="               { return GE; }
-"<="               { return LE; }
-">"                { return GT; }
-"<"                { return LT; }
-"="                { return ASSIGN; }
-";"                { return SEMICOLON; }
-"("                { return LPAREN; }
-")"                { return RPAREN; }
-"+"                { return PLUS; }
-"-"                { return MINUS; }
-"*"                { return TIMES; }
-"/"                { return DIVIDE; }
-":"                { return COLON; }
 
-[ \t\n]+  { /* não faz nada */ }
+[ \t\n]+    { /* Espaços */ }
 
-.        { printf("Caractere não reconhecido: %s\n", yytext); }
+.           { printf("UNKNOWN_CHAR(%s)\n", yytext); }
 
 %%
 
