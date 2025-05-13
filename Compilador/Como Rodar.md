@@ -5,6 +5,6 @@ flex scanner.l
 windows
     cc -o scanner parser.tab.c lex.yy.c -lfl 
 mac linux
-    cc -o scanner parser.tab.c lex.yy.c -lfl 
+    cc -o scanner parser.tab.c lex.yy.c -ll 
 
 ./scanner < entrada.txt 

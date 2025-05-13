@@ -13,6 +13,9 @@ void yyerror(const char *s);
     char* str;
 }
 
+%left '+' '-'
+%left '*' '/'
+
 %token <str> operador_mais
 %token <str> operador_menos
 %token <str> operador_multiplicacao
@@ -52,10 +55,12 @@ stmt:
     statement
     | print
     | condicional
+    | expressao { printf("Expressao: %s\n", $1); }
+    ;
 
 
 statement:
-    ID atribuicao_igual expressao { printf("int %s = %s;\n", $1, $3); }
+    ID atribuicao_igual expressao { printf("declaracao:\n    int %s = %s;\n", $1, $3); }
     ;
 
 expressao:
@@ -92,8 +97,6 @@ expressao:
         $$ = strdup(buffer);
     }
     ;
-
-
 
 print:
     comando_print caracter_abreParentese ID caracter_fechaParentese { printf("printf(\"%%d\\n\", %s);\n", $3); }
