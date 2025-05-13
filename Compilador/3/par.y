@@ -38,8 +38,9 @@ void yyerror(const char *s);
 %token <str> FRASE
 
 
-%type <intValue> expressao
+%type <str> expressao
 %type <str> comparador
+%type <str> operador
 %type <str> comparacao
 
 %%
@@ -55,16 +56,48 @@ stmt:
 
 
 statement:
-    ID atribuicao_igual expressao { printf("declaracao:\n    int %s = %d;\n", $1, $3); }
+    ID atribuicao_igual expressao { printf("declaracao:\n    int %s = %s;\n", $1, $3); }
+    ;
 
 expressao:
-    NUM { $$ = $1; }
-    | ID { $$ = 0; }  // Para variáveis não inicializadas, o valor será 0
-    | expressao operador_mais expressao { $$ = $1 + $3; }
-    | expressao operador_menos expressao { $$ = $1 - $3; }
-    | expressao operador_multiplicacao expressao { $$ = $1 * $3; }
-    | expressao operador_divisao expressao { $$ = $1 / $3; }
+    NUM { 
+        char buffer[20];
+        sprintf(buffer, "%d", yylval.intValue);
+        $$ = strdup(buffer);
+    }
+    | expressao '+' NUM 
+    {
+        char buffer[256];
+        sprintf(buffer, "%s + %d", $1, $3);
+        $$ = strdup(buffer);
+    }
+    | expressao '-' NUM 
+    {
+        char buffer[256];
+        sprintf(buffer, "%s - %d", $1, $3);
+        $$ = strdup(buffer);
+    }
+    | expressao '*' NUM 
+    {
+        char buffer[256];
+        sprintf(buffer, "%s * %d", $1, $3);
+        $$ = strdup(buffer);
+    }
+    | expressao '/' NUM 
+    {
+        char buffer[256];
+        sprintf(buffer, "%s / %d", $1, $3);
+        $$ = strdup(buffer);
+    }
     ;
+
+operador:
+    '+' { $$ = strdup("+"); }
+  | '-' { $$ = strdup("-"); }
+  | '*' { $$ = strdup("*"); }
+  | '/' { $$ = strdup("/"); }
+;
+
 
 print:
     comando_print caracter_abreParentese ID caracter_fechaParentese { printf("printf(\"%%d\\n\", %s);\n", $3); }
@@ -79,7 +112,7 @@ comparacao:
     expressao comparador expressao 
     {
         char buffer[256];
-        sprintf(buffer, "%d %s %d", $1, $2, $3); //"5 > 3"
+        sprintf(buffer, "%s %s %s", $1, $2, $3); //"5 > 3"
         $$ = strdup(buffer);
         free($2);
     }
