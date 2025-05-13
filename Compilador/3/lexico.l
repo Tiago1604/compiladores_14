@@ -17,6 +17,11 @@ extern int yyparse(void);
 "="         { return atribuicao_igual; }
 
 "print"         { return comando_print; }
+"if"            { return comando_if; }
+
+"("             { return caracter_abreParentese; }
+")"             { return caracter_fechaParentese; }
+":"             { return caracter_doispontos; }
 
 "=="   { yylval.str = strdup("=="); return comparador_igual; }
 "!="   { yylval.str = strdup("!="); return comparador_diferente; }
@@ -24,6 +29,8 @@ extern int yyparse(void);
 "<"    { yylval.str = strdup("<"); return comparador_menor_que; }
 ">="   { yylval.str = strdup(">="); return comparador_maior_igual; }
 "<="   { yylval.str = strdup("<="); return comparador_menor_igual; }
+
+\"([^"]*)\" {yylval.str = strdup(yytext);  return FRASE;}
 
 [0-9]+             { yylval.intValue = atoi(yytext); return NUM; }
 [a-zA-Z_][a-zA-Z0-9_]* { yylval.id = strdup(yytext); return ID; }

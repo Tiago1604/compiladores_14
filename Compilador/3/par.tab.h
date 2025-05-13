@@ -44,8 +44,20 @@
      operador_multiplicacao = 260,
      operador_divisao = 261,
      atribuicao_igual = 262,
-     NUM = 263,
-     ID = 264
+     comando_print = 263,
+     comando_if = 264,
+     comparador_igual = 265,
+     comparador_diferente = 266,
+     comparador_maior_que = 267,
+     comparador_menor_que = 268,
+     comparador_maior_igual = 269,
+     comparador_menor_igual = 270,
+     NUM = 271,
+     ID = 272,
+     caracter_abreParentese = 273,
+     caracter_fechaParentese = 274,
+     caracter_doispontos = 275,
+     FRASE = 276
    };
 #endif
 /* Tokens.  */
@@ -54,8 +66,20 @@
 #define operador_multiplicacao 260
 #define operador_divisao 261
 #define atribuicao_igual 262
-#define NUM 263
-#define ID 264
+#define comando_print 263
+#define comando_if 264
+#define comparador_igual 265
+#define comparador_diferente 266
+#define comparador_maior_que 267
+#define comparador_menor_que 268
+#define comparador_maior_igual 269
+#define comparador_menor_igual 270
+#define NUM 271
+#define ID 272
+#define caracter_abreParentese 273
+#define caracter_fechaParentese 274
+#define caracter_doispontos 275
+#define FRASE 276
 
 
 
@@ -69,7 +93,7 @@ typedef union YYSTYPE
     char* str;
 }
 /* Line 1529 of yacc.c.  */
-#line 73 "par.tab.h"
+#line 97 "par.tab.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
