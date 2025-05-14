@@ -23,6 +23,10 @@ void yyerror(const char *s);
 %token comando_print
 %token comando_if
 %token comando_else
+%token comando_while
+%token comando_for
+%token comando_in
+%token comando_range
 
 %token <str> comparador_igual
 %token <str> comparador_diferente
@@ -42,7 +46,7 @@ void yyerror(const char *s);
 %type <str> expressao
 %type <str> comparador
 %type <str> comparacao
-%type <str> stmt statement print condicional
+%type <str> stmt statement print condicional loop_while loop_for
 
 
 %%
@@ -55,16 +59,18 @@ stmt:
     statement { $$ = $1; }
     | print    { $$ = $1; }
     | condicional { $$ = $1; }
+    | loop_while { $$ = $1; }
+    | loop_for { $$ = $1; }
     ;
-
-
 
 statement:
     ID atribuicao_igual expressao {
         char buffer[256];
         sprintf(buffer, "int %s = %s;", $1, $3);
-        printf("%s\n", buffer);       // imprime o código C no terminal
-        $$ = strdup(buffer);          // retorna o valor formatado
+        printf("%s\n", buffer);
+        $$ = strdup(buffer);
+        free($1);
+        free($3);
     }
     ;
 
@@ -82,51 +88,90 @@ expressao:
         char buffer[256];
         sprintf(buffer, "%s + %s", $1, $3);
         $$ = strdup(buffer);
+        free($1);
+        free($3);
     }
     | expressao operador_menos expressao 
     {
         char buffer[256];
         sprintf(buffer, "%s - %s", $1, $3);
         $$ = strdup(buffer);
+        free($1);
+        free($3);
     }
     | expressao operador_multiplicacao expressao 
     {
         char buffer[256];
         sprintf(buffer, "%s * %s", $1, $3);
         $$ = strdup(buffer);
+        free($1);
+        free($3);
     }
     | expressao operador_divisao expressao 
     {
         char buffer[256];
         sprintf(buffer, "%s / %s", $1, $3);
         $$ = strdup(buffer);
+        free($1);
+        free($3);
     }
     ;
 
-
-
 print:
-    comando_print caracter_abreParentese ID caracter_fechaParentese { printf("printf(\"%%d\\n\", %s);\n", $3); }
-    | comando_print caracter_abreParentese NUM caracter_fechaParentese { printf("printf(\"%%d\\n\", %d);\n", $3); }
-    | comando_print caracter_abreParentese FRASE caracter_fechaParentese { printf("printf(%s);\n", $3); }
+    comando_print caracter_abreParentese ID caracter_fechaParentese { 
+        printf("printf(\"%%d\\n\", %s);\n", $3);
+        $$ = strdup("print");
+        free($3);
+    }
+    | comando_print caracter_abreParentese NUM caracter_fechaParentese { 
+        printf("printf(\"%%d\\n\", %d);\n", $3);
+        $$ = strdup("print");
+    }
+    | comando_print caracter_abreParentese FRASE caracter_fechaParentese { 
+        printf("printf(%s);\n", $3);
+        $$ = strdup("print");
+        free($3);
+    }
     ;
 
 condicional:
-    // if x > x: instrucao
-    comando_if comparacao caracter_doispontos stmt{ printf("if (%s) {\n%s\n}\n", $2, $4); }
-    // if x > x: intrucao else: instrucao
-    | comando_if comparacao caracter_doispontos stmt comando_else caracter_doispontos stmt { printf("if (%s) {\n%s\n} else {\n%s\n}\n", $2, $4, $7); }
-    | comando_if ID caracter_doispontos stmt{ printf("if (%s) {\n%s\n}\n", $2, $4); }
-    | comando_if ID caracter_doispontos stmt comando_else caracter_doispontos stmt { printf("if (%s) {\n%s\n} else {\n%s\n}\n", $2, $4, $7); }
-
+    comando_if comparacao caracter_doispontos stmt { 
+        printf("if (%s) {\n%s\n}\n", $2, $4);
+        $$ = strdup("if");
+        free($2);
+        free($4);
+    }
+    | comando_if comparacao caracter_doispontos stmt comando_else caracter_doispontos stmt { 
+        printf("if (%s) {\n%s\n} else {\n%s\n}\n", $2, $4, $7);
+        $$ = strdup("if-else");
+        free($2);
+        free($4);
+        free($7);
+    }
+    | comando_if ID caracter_doispontos stmt { 
+        printf("if (%s) {\n%s\n}\n", $2, $4);
+        $$ = strdup("if");
+        free($2);
+        free($4);
+    }
+    | comando_if ID caracter_doispontos stmt comando_else caracter_doispontos stmt { 
+        printf("if (%s) {\n%s\n} else {\n%s\n}\n", $2, $4, $7);
+        $$ = strdup("if-else");
+        free($2);
+        free($4);
+        free($7);
+    }
+    ;
 
 comparacao:
     expressao comparador expressao 
     {
         char buffer[256];
-        sprintf(buffer, "%s %s %s", $1, $2, $3); //"5 > 3"
+        sprintf(buffer, "%s %s %s", $1, $2, $3);
         $$ = strdup(buffer);
+        free($1);
         free($2);
+        free($3);
     }
     ;
 
@@ -137,6 +182,24 @@ comparador:
     | comparador_menor_que      { $$ = $1; }
     | comparador_maior_igual    { $$ = $1; }
     | comparador_menor_igual    { $$ = $1; }
+    ;
+
+loop_while:
+    comando_while comparacao caracter_doispontos stmt {
+        printf("while (%s) {\n%s\n}\n", $2, $4);
+        $$ = strdup("while");
+        free($2);
+        free($4);
+    }
+    ;
+
+loop_for:
+    comando_for ID comando_in comando_range caracter_abreParentese NUM caracter_fechaParentese caracter_doispontos stmt {
+        printf("for (int %s = 0; %s < %d; %s++) {\n%s\n}\n", $2, $2, $6, $2, $9);
+        $$ = strdup("for");
+        free($2);
+        free($9);
+    }
     ;
 
 %%

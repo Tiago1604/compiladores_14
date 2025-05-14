@@ -18,7 +18,11 @@ extern int yyparse(void);
 
 "print"         { return comando_print; }
 "if"            { return comando_if; }
-"else"            { return comando_else; }
+"else"          { return comando_else; }
+"while"         { return comando_while; }
+"for"           { return comando_for; }
+"in"            { return comando_in; }
+"range"         { return comando_range; }
 
 "("             { return caracter_abreParentese; }
 ")"             { return caracter_fechaParentese; }
