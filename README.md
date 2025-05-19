@@ -59,6 +59,8 @@ Essa estrutura foi projetada para organizar o projeto de forma clara, separando 
     ./compilador < entrada.txt
     ```
 
+## Ajustes e Melhorias
+
 ## Atividades Semanais
 
 A cada semana, novas atividades e exercícios serão postados neste repositório, acompanhados de explicações e instruções para sua realização.
