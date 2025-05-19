@@ -2,18 +2,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "types.h"
+#include "tipos.h"
+#include "ast.h"
+#include "tabela.h"
 
 int yylex(void);
 void yyerror(const char *s);
 void type_error(const char* expected, const char* got, const char* var_name);
-
-// Array simples para armazenar variáveis
-Variable variables[100];
-int var_count = 0;
 %}
-
-
 
 %union {
     int intValue;
@@ -21,6 +17,11 @@ int var_count = 0;
     char* str;
     float floatValue;
     char charValue;
+    NoAST* ast;
+}
+
+%code requires {
+    #include "tipos.h"
 }
 
 %token EQ NEQ GE LE GT LT
@@ -38,101 +39,143 @@ int var_count = 0;
 %token YIELD DEF CLASS
 %token ASYNC AWAIT MATCH CASE TYPE
 
-%type <intValue> expr
-%type <str> comp         //(>, <, etc)
-%type <id> cond          //condicao
+%type <ast> expr
+%type <str> comp
+%type <id> cond
 
-%left PLUS MINUS    // Lower precedence
-%left TIMES DIVIDE  // Higher precedence
+%left PLUS MINUS
+%left TIMES DIVIDE
 %nonassoc COLON
-%nonassoc ELSE     // Resolve the dangling else problem
+%nonassoc ELSE
 
 %%
 
+
 program:
-    program stmt            
+    program stmt
     |
     ;
+
 stmt:
     decl
     | assign
     | print
     | if_stmt
     ;
+
 decl:
     INT ID
     {
-        // Verifica se variável já foi declarada
-        for (int i = 0; i < var_count; i++) {
-            if (strcmp(variables[i].name, $2) == 0) {
-                fprintf(stderr, "Erro: Variável '%s' já foi declarada\n", $2);
-                YYERROR;
-            }
+        if (buscarSimbolo($2)) {
+            fprintf(stderr, "Erro: Variável '%s' já foi declarada\n", $2);
+            YYERROR;
         }
-        
-        // Adiciona variável à tabela de símbolos
-        variables[var_count].name = strdup($2);
-        variables[var_count].type = TYPE_INT;
-        var_count++;
+        inserirSimbolo($2, "int");
         printf("int %s;\n", $2);
         free($2);
     }
     ;
+
 assign:
     ID ASSIGN expr
     {
-        // Procura a variável na tabela de símbolos
-        int found = 0;
-        for (int i = 0; i < var_count; i++) {
-            if (strcmp(variables[i].name, $1) == 0) {
-                found = 1;
-                if (variables[i].type == TYPE_INT) {
-                    printf("%s = %d;\n", $1, $3);
-                }
-                break;
-            }
-        }
-        if (!found) {
+        Simbolo *s = buscarSimbolo($1);
+        if (!s) {
             fprintf(stderr, "Erro: Variável '%s' não foi declarada\n", $1);
             YYERROR;
         }
+        // Aqui você pode verificar tipos se desejar
+        printf("%s = ", $1);
+        imprimirAST($3);
+        printf(";\n");
+        liberarAST($3);
         free($1);
     }
+    | ID ASSIGN error SEMICOLON {
+        fprintf(stderr, "[ERRO SINTATICO] Expressão inválida na atribuição. Pulando até ';'\n");
+        yyerrok;
+        yyclearin;
+    }
+    | error SEMICOLON {
+        fprintf(stderr, "[ERRO SINTATICO] Atribuição mal formatada. Pulando até ';'\n");
+        yyerrok;
+        yyclearin;
+    }
     ;
+
 print:
     PRINT LPAREN ID RPAREN
     {
+        if (!buscarSimbolo($3)) {
+            fprintf(stderr, "Erro: Variável '%s' não foi declarada\n", $3);
+            YYERROR;
+        }
         printf("printf(\"%%d\\n\", %s);\n", $3);
+        free($3);
     }
     | PRINT LPAREN NUM RPAREN
     {
         printf("printf(\"%%d\\n\", %d);\n", $3);
     }
+    | PRINT LPAREN expr RPAREN
+    {
+        printf("printf(\"%%d\\n\", ");
+        imprimirAST($3);
+        printf(");\n");
+        liberarAST($3);
+    }
+    | PRINT LPAREN error RPAREN SEMICOLON {
+        fprintf(stderr, "[ERRO SINTATICO] Expressão inválida no print. Pulando até ';'\n");
+        yyerrok;
+        yyclearin;
+    }
+    | PRINT error SEMICOLON {
+        fprintf(stderr, "[ERRO SINTATICO] Comando print mal formatado. Pulando até ';'\n");
+        yyerrok;
+        yyclearin;
+    }
     ;
+
 if_stmt:
-//if sem else
     IF LPAREN cond RPAREN COLON stmt
     {
         printf("if (%s) {\n}\n", $3);
         free($3);
     }
-    //if-else
     | IF LPAREN cond RPAREN COLON stmt ELSE COLON stmt
     {
         printf("if (%s) {\n} else {\n}\n", $3);
         free($3);
     }
+    | IF LPAREN error RPAREN COLON stmt SEMICOLON {
+        fprintf(stderr, "[ERRO SINTATICO] Condição inválida no if. Pulando até ';'\n");
+        yyerrok;
+        yyclearin;
+    }
+    | IF error SEMICOLON {
+        fprintf(stderr, "[ERRO SINTATICO] Estrutura if mal formatada. Pulando até ';'\n");
+        yyerrok;
+        yyclearin;
+    }
     ;
+
 cond:
     expr comp expr
     {
         char buffer[256];
-        sprintf(buffer, "%d %s %d", $1, $2, $3); //"5 > 3"
+        sprintf(buffer, "(");
+        imprimirAST($1);
+        sprintf(buffer + strlen(buffer), " %s ", $2);
+        imprimirAST($3);
+        sprintf(buffer + strlen(buffer), ")");
         $$ = strdup(buffer);
         free($2);
+        liberarAST($1);
+        liberarAST($3);
     }
     | ID { $$ = strdup($1); }
     ;
+
 comp:
     GT { $$ = strdup(">"); }
     | LT { $$ = strdup("<"); }
@@ -141,20 +184,24 @@ comp:
     | EQ { $$ = strdup("=="); }
     | NEQ { $$ = strdup("!="); }
     ;
+
 expr:
-    NUM { $$ = $1; }
-    | ID { $$ = 0; }
-    | LPAREN expr RPAREN { $$ = $2; }
-    | expr PLUS expr { $$ = $1 + $3; }
-    | expr MINUS expr { $$ = $1 - $3; }
-    | expr TIMES expr { $$ = $1 * $3; }
-    | expr DIVIDE expr { 
-        if ($3 == 0) {
-            fprintf(stderr, "Erro: Divisão por zero\n");
-            $$ = 0;
-        } else {
-            $$ = $1 / $3; 
+    NUM { $$ = criarNoNum($1); }
+    | ID {
+        if (!buscarSimbolo($1)) {
+            fprintf(stderr, "Erro: Variável '%s' não foi declarada\n", $1);
+            YYERROR;
         }
+        $$ = criarNoId($1);
+        free($1);
+    }
+    | LPAREN expr RPAREN { $$ = $2; }
+    | expr PLUS expr { $$ = criarNoOp('+', $1, $3); }
+    | expr MINUS expr { $$ = criarNoOp('-', $1, $3); }
+    | expr TIMES expr { $$ = criarNoOp('*', $1, $3); }
+    | expr DIVIDE expr {
+        // Não faz verificação de divisão por zero aqui, pois é AST
+        $$ = criarNoOp('/', $1, $3);
     }
     ;
 
@@ -205,7 +252,6 @@ void yyerror(const char *s) {
             fprintf(stderr, "Erro sintático: %s\n", s);
     }
 }
-
 void type_error(const char* expected, const char* got, const char* var_name) {
     fprintf(stderr, "Erro de tipo: Variável '%s' é do tipo '%s', mas recebeu valor do tipo '%s'\n",
             var_name, expected, got);
