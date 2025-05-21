@@ -1,20 +1,21 @@
-CC = gcc
-FLEX = flex
-BISON = bison
+CC = gcc                    # Compilador C
+FLEX = flex                 # Analisador léxico
+BISON = bison               # Analisador sintático
 
+# Arquivos fonte
 SRC = parser.y scanner.l ast.c tabela.c
-OBJ = parser.tab.o lex.yy.o ast.o tabela.o
-HDR = ast.h tabela.h tipos.h
+OBJ = parser.tab.o lex.yy.o ast.o tabela.o  # Arquivos objeto
+HDR = ast.h tabela.h tipos.h                # Arquivos de cabeçalho
 
 # Alvo padrão
 all: compilador
 
 # Geração dos arquivos do Bison e Flex
 parser.tab.c parser.tab.h: parser.y $(HDR)
-	$(BISON) -d parser.y
+	$(BISON) -d parser.y              # Gera arquivo C e cabeçalho
 
 lex.yy.c: scanner.l parser.tab.h
-	$(FLEX) scanner.l
+	$(FLEX) scanner.l                 # Gera código-fonte do scanner
 
 # Compilação dos objetos
 parser.tab.o: parser.tab.c $(HDR)
@@ -42,7 +43,9 @@ test: compilador
 		echo ""; \
 	done
 
+# Limpa arquivos temporários e compilados
 clean:
 	rm -f *.o *.tab.c *.tab.h lex.yy.c compilador
 
+# Define alvos que não são arquivos
 .PHONY: all clean test compilador
