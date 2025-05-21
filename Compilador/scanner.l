@@ -6,11 +6,13 @@
 
 // Declaração da nova função de parsing com verificação
 extern int yyparse_and_check();
+extern int linha_atual;  // Linha atual para mensagens de erro
 %}
 
 %%
 
-[ \t\n]            ;
+[ \t]              ; // Ignora espaços e tabs
+\n                 { linha_atual++; } // Incrementa contador de linhas
 "print"            { return PRINT; }
 "if"               { return IF; }
 "else"             { return ELSE; }
@@ -71,7 +73,7 @@ extern int yyparse_and_check();
 
 [ \t\n]+  { /* não faz nada - ignora sequências de espaços */ }
 
-.        { printf("Caractere não reconhecido: %s\n", yytext); }
+.        { fprintf(stderr, "[ERRO LÉXICO] Linha %d: Caractere não reconhecido: '%s'\n", linha_atual, yytext); }
 
 %%
 
@@ -90,6 +92,8 @@ int main(int argc, char **argv) {
             return 1;
         }
         yyin = f;  // Define entrada para o analisador léxico
+    } else {
+        printf("Compilador iniciado. Digite seu código (Ctrl+D para finalizar):\n");
     }
 
     // Usa a nova função que faz parsing e verificação

@@ -9,6 +9,7 @@
 int yylex(void);                     // Função gerada pelo flex para o analisador léxico
 void yyerror(const char *s);         // Função para reportar erros de sintaxe
 void type_error(const char* expected, const char* got, const char* var_name);  // Função para erros de tipo
+int linha_atual = 1;                 // Variável global para rastrear número da linha atual
 %}
 
 %union {
@@ -114,8 +115,8 @@ assign:
         Simbolo *s = buscarSimbolo($1);
         if (!s) {
             // No Python, podemos usar variáveis antes de declará-las (convertemos para C)
-            fprintf(stderr, "Aviso: Implicitamente declarando variável '%s' como int\n", $1);
-            inserirSimboloCompleto($1, "int", SIM_VARIAVEL, @1.first_line);
+            fprintf(stderr, "[AVISO] Linha %d: Implicitamente declarando variável '%s' como int\n", linha_atual, $1);
+            inserirSimboloCompleto($1, "int", SIM_VARIAVEL, linha_atual);
             s = buscarSimbolo($1);
         }
         
@@ -123,8 +124,18 @@ assign:
         if (strcmp(s->tipo, "int") == 0) {
             if ($3->tipo == AST_NUM && $3->valor < 0) {
                 type_error("int", "int negativo", $1);
+                fprintf(stderr, "[AVISO] Linha %d: Valor negativo (%d) atribuído à variável '%s'\n",
+                        linha_atual, $3->valor, $1);
                 // Não vai gerar YYERROR, apenas aviso
             }
+        }
+        
+        // Verifica o tipo da expressão se for uma operação
+        if ($3->tipo == AST_OP) {
+            // Pode adicionar verificações específicas para operações aqui
+            char op_str[2] = {$3->operador, '\0'};
+            fprintf(stderr, "[INFO] Linha %d: Atribuindo resultado de operação '%s' à variável '%s'\n",
+                    linha_atual, op_str, $1);
         }
         
         // Marca como inicializada e utilizada
@@ -145,13 +156,22 @@ assign:
     }
     | ID ASSIGN error SEMICOLON {
         // Tratamento de erro sintático em atribuição
-        fprintf(stderr, "[ERRO SINTATICO] Expressão inválida na atribuição. Pulando até ';'\n");
+        fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Expressão inválida na atribuição para a variável '%s'. Deve ser uma expressão válida\n", 
+                linha_atual, $1);
         yyerrok;    // Indica ao Bison que o erro foi recuperado
         yyclearin;  // Limpa token de erro no buffer
+        free($1);   // Libera memória do identificador
+    }
+    | error ASSIGN expr SEMICOLON {
+        // Tratamento de erro sintático em atribuição (lado esquerdo inválido)
+        fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Identificador inválido no lado esquerdo da atribuição\n", linha_atual);
+        yyerrok;    // Indica ao Bison que o erro foi recuperado
+        yyclearin;  // Limpa token de erro no buffer
+        liberarAST($3);  // Libera memória da AST
     }
     | error SEMICOLON {
         // Tratamento de erro sintático genérico
-        fprintf(stderr, "[ERRO SINTATICO] Atribuição mal formatada. Pulando até ';'\n");
+        fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Atribuição mal formatada. Formato correto: identificador = expressão;\n", linha_atual);
         yyerrok;    // Indica ao Bison que o erro foi recuperado
         yyclearin;  // Limpa token de erro no buffer
     }
@@ -164,8 +184,14 @@ print:
         // Verifica se a variável existe na tabela de símbolos
         Simbolo *s = buscarSimbolo($3);
         if (!s) {
-            fprintf(stderr, "Erro: Variável '%s' não foi declarada\n", $3);
+            fprintf(stderr, "[ERRO DE REFERÊNCIA] Linha %d: Variável '%s' não foi declarada antes de ser usada no print\n", linha_atual, $3);
             YYERROR;  // Reporta erro ao Bison
+        }
+        
+        // Verifica se a variável foi inicializada
+        if (!s->inicializado) {
+            fprintf(stderr, "[AVISO] Linha %d: Variável '%s' pode não ter sido inicializada antes do print\n", linha_atual, $3);
+            // Não causamos erro, apenas aviso
         }
         
         // Marca a variável como utilizada
@@ -194,13 +220,13 @@ print:
     }
     | PRINT LPAREN error RPAREN SEMICOLON {
         // Tratamento de erro sintático no print
-        fprintf(stderr, "[ERRO SINTATICO] Expressão inválida no print. Pulando até ';'\n");
+        fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Expressão inválida no print. Comando print deve receber uma expressão válida\n", linha_atual);
         yyerrok;    // Indica ao Bison que o erro foi recuperado
         yyclearin;  // Limpa token de erro no buffer
     }
     | PRINT error SEMICOLON {
         // Tratamento de erro sintático no print (formato)
-        fprintf(stderr, "[ERRO SINTATICO] Comando print mal formatado. Pulando até ';'\n");
+        fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Comando print mal formatado. Formato correto: print(expressão);\n", linha_atual);
         yyerrok;    // Indica ao Bison que o erro foi recuperado
         yyclearin;  // Limpa token de erro no buffer
     }
@@ -222,15 +248,21 @@ if_stmt:
     }
     | IF LPAREN error RPAREN block SEMICOLON {
         // Tratamento de erro sintático na condição do if
-        fprintf(stderr, "[ERRO SINTATICO] Condição inválida no if. Pulando até ';'\n");
+        fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Condição inválida no if. Deve ser uma expressão booleana válida ou comparação\n", linha_atual);
         yyerrok;    // Indica ao Bison que o erro foi recuperado
         yyclearin;  // Limpa token de erro no buffer
     }
     | IF error SEMICOLON {
         // Tratamento de erro sintático no formato do if
-        fprintf(stderr, "[ERRO SINTATICO] Estrutura if mal formatada. Pulando até ';'\n");
+        fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Estrutura if mal formatada. Formato correto: if (condição) : comando;\n", linha_atual);
         yyerrok;    // Indica ao Bison que o erro foi recuperado
         yyclearin;  // Limpa token de erro no buffer
+    }
+    | IF LPAREN cond RPAREN error SEMICOLON {
+        // Tratamento de erro sintático no bloco do if
+        fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Bloco do if mal formatado. Esperado ':' seguido de comando ou bloco\n", linha_atual);
+        yyerrok;
+        yyclearin;
     }
     ;
 
@@ -357,9 +389,13 @@ expr:
         Simbolo *s = buscarSimbolo($1);
         if (!s) {
             // Em Python, variáveis podem ser usadas antes de declaradas
-            fprintf(stderr, "Aviso: Implicitamente declarando variável '%s' como int\n", $1);
-            inserirSimboloCompleto($1, "int", SIM_VARIAVEL, @1.first_line);
+            fprintf(stderr, "[AVISO] Linha %d: Implicitamente declarando variável '%s' como int\n", linha_atual, $1);
+            inserirSimboloCompleto($1, "int", SIM_VARIAVEL, linha_atual);
         } else {
+            // Verifica se a variável foi inicializada
+            if (!s->inicializado) {
+                fprintf(stderr, "[AVISO] Linha %d: Variável '%s' está sendo usada antes de receber um valor\n", linha_atual, $1);
+            }
             // Marca a variável como utilizada
             marcarUtilizado($1);
         }
@@ -373,7 +409,7 @@ expr:
     | expr DIVIDE expr {
         // Verifica divisão por zero se o divisor for uma constante
         if ($3->tipo == AST_NUM && $3->valor == 0) {
-            fprintf(stderr, "Erro: Divisão por zero detectada\n");
+            fprintf(stderr, "[ERRO ARITMÉTICO] Linha %d: Divisão por zero detectada em tempo de compilação\n", linha_atual);
             YYERROR;  // Reporta erro ao Bison
         }
         
@@ -394,10 +430,21 @@ expr:
                 printf(")");
             }
             printf(" == 0) {\n");
-            printf("    fprintf(stderr, \"Erro em tempo de execução: Divisão por zero\\n\");\n");
+            printf("    fprintf(stderr, \"[ERRO EM TEMPO DE EXECUÇÃO] Divisão por zero na expressão: ");
+            
+            // Imprime a expressão completa para fins de diagnóstico
+            imprimirAST($1);
+            printf(" / ");
+            imprimirAST($3);
+            
+            printf("\\n\");\n");
             printf("    exit(1);\n");
             printf("}\n");
         }
+    }
+    | error {
+        fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Expressão mal formada. Verifique a sintaxe\n", linha_atual);
+        yyerrok;
     }
     ;
 
@@ -405,54 +452,95 @@ expr:
 
 // Função chamada pelo Bison para reportar erros de sintaxe
 void yyerror(const char *s) {
+    fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: ", linha_atual);
+    
     switch(yychar) {
         case INT:
             if (yylval.id == NULL)
-                fprintf(stderr, "Erro: Declaração 'int' deve ser seguida de um identificador válido\n");
+                fprintf(stderr, "Declaração 'int' deve ser seguida de um identificador válido\n");
+            else
+                fprintf(stderr, "Erro na declaração de variável do tipo 'int'\n");
             break;
             
         case ASSIGN:
-            fprintf(stderr, "Erro: Atribuição inválida. Formato correto: identificador = expressão\n");
+            fprintf(stderr, "Atribuição inválida. Formato correto: identificador = expressão\n");
             break;
             
         case ID:
-            fprintf(stderr, "Erro: Uso incorreto de identificador '%s'\n", yylval.id);
+            fprintf(stderr, "Uso incorreto do identificador '%s'. Verifique se ele está sendo utilizado no contexto correto\n", yylval.id);
             break;
             
         case NUM:
-            fprintf(stderr, "Erro: Uso incorreto do número '%d'\n", yylval.intValue);
+            fprintf(stderr, "Uso incorreto do número '%d'. Os números devem ser usados em expressões ou atribuições\n", yylval.intValue);
             break;
             
         case PRINT:
-            fprintf(stderr, "Erro: Comando print mal formatado. Use: print(expressão)\n");
+            fprintf(stderr, "Comando print mal formatado. Sintaxe correta: print(expressão)\n");
             break;
             
         case IF:
-            fprintf(stderr, "Erro: Estrutura if mal formatada. Use: if (condição) : comando\n");
+            fprintf(stderr, "Estrutura if mal formatada. Sintaxe correta: if (condição) : comando\n");
             break;
             
         case ELSE:
-            fprintf(stderr, "Erro: else deve ser precedido por um if\n");
+            fprintf(stderr, "Erro no comando 'else': deve ser precedido por um 'if' e seguido por um bloco de código\n");
             break;
             
         case COLON:
-            fprintf(stderr, "Erro: ':' usado incorretamente\n");
+            fprintf(stderr, "Dois pontos ':' usado incorretamente. O ':' deve seguir uma condição ou preceder um bloco\n");
             break;
             
         case LPAREN:
+            fprintf(stderr, "Parêntese de abertura '(' sem o correspondente parêntese de fechamento ')'\n");
+            break;
+            
         case RPAREN:
-            fprintf(stderr, "Erro: Parênteses não balanceados\n");
+            fprintf(stderr, "Parêntese de fechamento ')' sem o correspondente parêntese de abertura '('\n");
+            break;
+            
+        case SEMICOLON:
+            fprintf(stderr, "Ponto e vírgula ';' usado incorretamente ou desnecessário\n");
+            break;
+            
+        case PLUS:
+        case MINUS:
+        case TIMES:
+        case DIVIDE:
+            fprintf(stderr, "Operador aritmético usado incorretamente. Deve estar entre duas expressões válidas\n");
+            break;
+            
+        case EQ:
+        case NEQ:
+        case GT:
+        case LT:
+        case GE:
+        case LE:
+            fprintf(stderr, "Operador de comparação usado incorretamente. Deve estar entre duas expressões válidas\n");
+            break;
+            
+        case LBRACE:
+            fprintf(stderr, "Chave de abertura '{' sem a correspondente chave de fechamento '}'\n");
+            break;
+            
+        case RBRACE:
+            fprintf(stderr, "Chave de fechamento '}' sem a correspondente chave de abertura '{'\n");
             break;
             
         default:
-            fprintf(stderr, "Erro sintático: %s\n", s);
+            if (strstr(s, "syntax error") != NULL) {
+                fprintf(stderr, "Sintaxe inválida. Verifique a estrutura do seu código\n");
+            } else if (strstr(s, "unexpected") != NULL) {
+                fprintf(stderr, "Token inesperado. Verifique se não há símbolos fora de lugar\n");
+            } else {
+                fprintf(stderr, "%s\n", s);
+            }
     }
 }
 
 // Função para reportar erros de tipo
 void type_error(const char* expected, const char* got, const char* var_name) {
-    fprintf(stderr, "Erro de tipo: Variável '%s' é do tipo '%s', mas recebeu valor do tipo '%s'\n",
-            var_name, expected, got);
+    fprintf(stderr, "[ERRO DE TIPO] Linha %d: Variável '%s' é do tipo '%s', mas recebeu valor do tipo '%s'\n",
+            linha_atual, var_name, expected, got);
 }
 
 // Função adicional para verificar variáveis não utilizadas no final do parsing
