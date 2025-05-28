@@ -3,10 +3,11 @@
 
 #include "tipos.h"
 
-NoAST *criarNoNum(int valor);
-NoAST *criarNoId(const char *nome);
-NoAST *criarNoOp(char operador, NoAST *esq, NoAST *dir);
-void imprimirAST(const NoAST *raiz);
-void liberarAST(NoAST *raiz);
+NoAST *criarNoNum(int valor);                       // Cria um nó para números
+NoAST *criarNoId(const char *nome);                 // Cria um nó para identificadores
+NoAST *criarNoOp(char operador, NoAST *esq, NoAST *dir);  // Cria um nó para operadores
+void imprimirAST(const NoAST *raiz);                // Imprime AST em notação de expressão
+void imprimirASTEmOrdem(const NoAST *raiz);         // Imprime AST em travessia em ordem
+void liberarAST(NoAST *raiz);                       // Libera memória da AST
 
 #endif
