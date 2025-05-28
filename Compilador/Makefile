@@ -1,6 +1,7 @@
 CC = gcc                    # Compilador C
 FLEX = flex                 # Analisador léxico
 BISON = bison               # Analisador sintático
+CFLAGS = -Wall -Wextra      # Flags de compilação
 
 # Arquivos fonte
 SRC = parser.y scanner.l ast.c tabela.c
@@ -19,20 +20,20 @@ lex.yy.c: scanner.l parser.tab.h
 
 # Compilação dos objetos
 parser.tab.o: parser.tab.c $(HDR)
-	$(CC) -c parser.tab.c
+	$(CC) $(CFLAGS) -c parser.tab.c
 
 lex.yy.o: lex.yy.c $(HDR)
-	$(CC) -c lex.yy.c
+	$(CC) $(CFLAGS) -c lex.yy.c
 
 ast.o: ast.c ast.h tipos.h
-	$(CC) -c ast.c
+	$(CC) $(CFLAGS) -c ast.c
 
 tabela.o: tabela.c tabela.h
-	$(CC) -c tabela.c
+	$(CC) $(CFLAGS) -c tabela.c
 
 # Linkagem final
 compilador: $(OBJ)
-	$(CC) -o compilador $(OBJ)
+	$(CC) $(CFLAGS) -o compilador $(OBJ)
 
 # Alvo para rodar todos os testes do diretório tests/
 test: compilador
@@ -43,9 +44,31 @@ test: compilador
 		echo ""; \
 	done
 
+# Alvo para gerar bitcode
+bitcode: compilador
+	@echo "Gerando bitcode para testes em ./tests/"
+	@mkdir -p output/bitcode
+	@for t in tests/*.txt; do \
+		base=$$(basename $$t .txt); \
+		echo "==== Bitcode para: $$t ===="; \
+		echo "#bitcode" | cat - $$t | ./compilador > output/bitcode/$$base.bitcode; \
+		echo "Arquivo gerado: output/bitcode/$$base.bitcode"; \
+	done
+
+# Alvo para gerar código C
+c: compilador
+	@echo "Gerando código C para testes em ./tests/"
+	@mkdir -p output/c
+	@for t in tests/*.txt; do \
+		base=$$(basename $$t .txt); \
+		echo "==== Código C para: $$t ===="; \
+		echo "#c" | cat - $$t | ./compilador > output/c/$$base.c; \
+		echo "Arquivo gerado: output/c/$$base.c"; \
+	done
+
 # Limpa arquivos temporários e compilados
 clean:
 	rm -f *.o *.tab.c *.tab.h lex.yy.c compilador
 
 # Define alvos que não são arquivos
-.PHONY: all clean test compilador
+.PHONY: all clean test compilador bitcode c

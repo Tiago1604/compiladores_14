@@ -10,6 +10,10 @@ int yylex(void);                     // Função gerada pelo flex para o analisa
 void yyerror(const char *s);         // Função para reportar erros de sintaxe
 void type_error(const char* expected, const char* got, const char* var_name);  // Função para erros de tipo
 int linha_atual = 1;                 // Variável global para rastrear número da linha atual
+
+// Variáveis globais para controle de geração de código
+int gerar_bitcode = 0;               // Flag para gerar bitcode
+int gerar_c = 1;                     // Flag para gerar código C (padrão)
 %}
 
 %union {
@@ -51,10 +55,11 @@ int linha_atual = 1;                 // Variável global para rastrear número d
 %type <id> cond       // Condições retornam um id (string)
 
 // Definição de precedência e associatividade
+%nonassoc LOWER_THAN_ELSE
+%nonassoc ELSE
 %left PLUS MINUS      // + e - têm mesma precedência, associativos à esquerda
 %left TIMES DIVIDE    // * e / têm precedência maior que + e -, associativos à esquerda
 %nonassoc COLON       // : não é associativo
-%nonassoc ELSE        // else não é associativo
 
 %%
 
@@ -114,45 +119,43 @@ assign:
         // Busca variável na tabela de símbolos
         Simbolo *s = buscarSimbolo($1);
         if (!s) {
-            // No Python, podemos usar variáveis antes de declará-las (convertemos para C)
             fprintf(stderr, "[AVISO] Linha %d: Implicitamente declarando variável '%s' como int\n", linha_atual, $1);
             inserirSimboloCompleto($1, "int", SIM_VARIAVEL, linha_atual);
             s = buscarSimbolo($1);
         }
         
-        // Verificação simples de tipo para demonstração
+        // Otimiza a expressão antes de gerar código
+        NoAST *expr_otimizada = otimizarAST($3);
+        
+        // Verificação de tipo
         if (strcmp(s->tipo, "int") == 0) {
-            if ($3->tipo == AST_NUM && $3->valor < 0) {
+            if (expr_otimizada->tipo == AST_NUM && expr_otimizada->valor < 0) {
                 type_error("int", "int negativo", $1);
                 fprintf(stderr, "[AVISO] Linha %d: Valor negativo (%d) atribuído à variável '%s'\n",
-                        linha_atual, $3->valor, $1);
-                // Não vai gerar YYERROR, apenas aviso
+                        linha_atual, expr_otimizada->valor, $1);
             }
-        }
-        
-        // Verifica o tipo da expressão se for uma operação
-        if ($3->tipo == AST_OP) {
-            // Pode adicionar verificações específicas para operações aqui
-            char op_str[2] = {$3->operador, '\0'};
-            fprintf(stderr, "[INFO] Linha %d: Atribuindo resultado de operação '%s' à variável '%s'\n",
-                    linha_atual, op_str, $1);
         }
         
         // Marca como inicializada e utilizada
         marcarInicializado($1);
         
-        // Gera código C para a atribuição
-        printf("%s = ", $1);
-        imprimirAST($3);  // Imprime a expressão
-        printf(";\n");
-        
-        // Se a expressão for um número constante, podemos atribuir o valor na tabela
-        if ($3->tipo == AST_NUM) {
-            atribuirValorInt($1, $3->valor);
+        // Gera código C ou bitcode dependendo da flag
+        if (gerar_bitcode) {
+            printf("STORE %s\n", $1);
+            gerarBitcode(expr_otimizada);
+        } else if (gerar_c) {
+            printf("%s = ", $1);
+            gerarCodigoC(expr_otimizada);
+            printf(";\n");
         }
         
-        liberarAST($3);   // Libera memória da AST
-        free($1);         // Libera memória do identificador
+        // Se a expressão for um número constante, atribui o valor na tabela
+        if (expr_otimizada->tipo == AST_NUM) {
+            atribuirValorInt($1, expr_otimizada->valor);
+        }
+        
+        liberarAST(expr_otimizada);   // Libera memória da AST otimizada
+        free($1);                     // Libera memória do identificador
     }
     | ID ASSIGN error SEMICOLON {
         // Tratamento de erro sintático em atribuição
@@ -185,20 +188,25 @@ print:
         Simbolo *s = buscarSimbolo($3);
         if (!s) {
             fprintf(stderr, "[ERRO DE REFERÊNCIA] Linha %d: Variável '%s' não foi declarada antes de ser usada no print\n", linha_atual, $3);
-            YYERROR;  // Reporta erro ao Bison
+            YYERROR;
         }
         
         // Verifica se a variável foi inicializada
         if (!s->inicializado) {
             fprintf(stderr, "[AVISO] Linha %d: Variável '%s' pode não ter sido inicializada antes do print\n", linha_atual, $3);
-            // Não causamos erro, apenas aviso
         }
         
         // Marca a variável como utilizada
         marcarUtilizado($3);
         
-        // Gera código C para o printf
-        printf("printf(\"%%d\\n\", %s);\n", $3);
+        // Gera código C ou bitcode dependendo da flag
+        if (gerar_bitcode) {
+            printf("LOAD_NAME %s\n", $3);
+            printf("PRINT\n");
+        } else if (gerar_c) {
+            printf("printf(\"%%d\\n\", %s);\n", $3);
+        }
+        
         free($3);  // Libera memória do identificador
     }
     | PRINT LPAREN NUM RPAREN
@@ -234,7 +242,7 @@ print:
 
 // Comando condicional if
 if_stmt:
-    IF LPAREN cond RPAREN block
+    IF LPAREN cond RPAREN block %prec LOWER_THAN_ELSE
     {
         // Gera código C para o if
         printf("if (%s) {\n    // Código do bloco if\n}\n", $3);

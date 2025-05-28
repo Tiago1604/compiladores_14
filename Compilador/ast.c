@@ -87,3 +87,137 @@ void liberarAST(NoAST *raiz) {
     liberarAST(raiz->direita);   // Libera filho direito (pós-ordem)
     free(raiz);                  // Libera o nó atual
 }
+
+// Função para avaliar expressões constantes
+int avaliarExpressaoConstante(NoAST *raiz) {
+    if (!raiz) return 0;
+    
+    switch (raiz->tipo) {
+        case AST_NUM:
+            return raiz->valor;
+        case AST_ID:
+            return 0; // Não podemos avaliar variáveis em tempo de compilação
+        case AST_OP: {
+            int esq = avaliarExpressaoConstante(raiz->esquerda);
+            int dir = avaliarExpressaoConstante(raiz->direita);
+            
+            switch (raiz->operador) {
+                case '+': return esq + dir;
+                case '-': return esq - dir;
+                case '*': return esq * dir;
+                case '/': return dir != 0 ? esq / dir : 0;
+                default: return 0;
+            }
+        }
+        default:
+            return 0;
+    }
+}
+
+// Função para otimizar a AST usando constant folding
+NoAST *otimizarAST(NoAST *raiz) {
+    if (!raiz) return NULL;
+    
+    // Otimiza os filhos primeiro
+    raiz->esquerda = otimizarAST(raiz->esquerda);
+    raiz->direita = otimizarAST(raiz->direita);
+    
+    // Se for um operador e ambos os filhos forem constantes
+    if (raiz->tipo == AST_OP && 
+        raiz->esquerda && raiz->esquerda->tipo == AST_NUM &&
+        raiz->direita && raiz->direita->tipo == AST_NUM) {
+        
+        int resultado = avaliarExpressaoConstante(raiz);
+        NoAST *novo = criarNoNum(resultado);
+        liberarAST(raiz);
+        return novo;
+    }
+    
+    // Otimização: x + 0 = x
+    if (raiz->tipo == AST_OP && raiz->operador == '+' &&
+        raiz->direita && raiz->direita->tipo == AST_NUM && raiz->direita->valor == 0) {
+        NoAST *novo = raiz->esquerda;
+        raiz->esquerda = NULL;
+        liberarAST(raiz);
+        return novo;
+    }
+    
+    // Otimização: x * 1 = x
+    if (raiz->tipo == AST_OP && raiz->operador == '*' &&
+        raiz->direita && raiz->direita->tipo == AST_NUM && raiz->direita->valor == 1) {
+        NoAST *novo = raiz->esquerda;
+        raiz->esquerda = NULL;
+        liberarAST(raiz);
+        return novo;
+    }
+    
+    // Otimização: x * 0 = 0
+    if (raiz->tipo == AST_OP && raiz->operador == '*' &&
+        ((raiz->esquerda && raiz->esquerda->tipo == AST_NUM && raiz->esquerda->valor == 0) ||
+         (raiz->direita && raiz->direita->tipo == AST_NUM && raiz->direita->valor == 0))) {
+        NoAST *novo = criarNoNum(0);
+        liberarAST(raiz);
+        return novo;
+    }
+    
+    return raiz;
+}
+
+// Função para gerar código intermediário (bitcode)
+void gerarBitcode(NoAST *raiz) {
+    if (!raiz) return;
+    
+    switch (raiz->tipo) {
+        case AST_NUM:
+            printf("LOAD_CONST %d\n", raiz->valor);
+            break;
+        case AST_ID:
+            printf("LOAD_NAME %s\n", raiz->nome);
+            break;
+        case AST_OP:
+            // Otimização: se for uma operação com constantes, carrega o resultado direto
+            if (raiz->esquerda && raiz->esquerda->tipo == AST_NUM &&
+                raiz->direita && raiz->direita->tipo == AST_NUM) {
+                int resultado = avaliarExpressaoConstante(raiz);
+                printf("LOAD_CONST %d\n", resultado);
+            } else {
+                gerarBitcode(raiz->esquerda);
+                gerarBitcode(raiz->direita);
+                switch (raiz->operador) {
+                    case '+': printf("ADD\n"); break;
+                    case '-': printf("SUB\n"); break;
+                    case '*': printf("MUL\n"); break;
+                    case '/': printf("DIV\n"); break;
+                }
+            }
+            break;
+    }
+}
+
+// Função para gerar código C a partir da AST
+void gerarCodigoC(NoAST *raiz) {
+    if (!raiz) return;
+    
+    switch (raiz->tipo) {
+        case AST_NUM:
+            printf("%d", raiz->valor);
+            break;
+        case AST_ID:
+            printf("%s", raiz->nome);
+            break;
+        case AST_OP:
+            // Otimização: se for uma operação com constantes, imprime o resultado direto
+            if (raiz->esquerda && raiz->esquerda->tipo == AST_NUM &&
+                raiz->direita && raiz->direita->tipo == AST_NUM) {
+                int resultado = avaliarExpressaoConstante(raiz);
+                printf("%d", resultado);
+            } else {
+                printf("(");
+                gerarCodigoC(raiz->esquerda);
+                printf(" %c ", raiz->operador);
+                gerarCodigoC(raiz->direita);
+                printf(")");
+            }
+            break;
+    }
+}

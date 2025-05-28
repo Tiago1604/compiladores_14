@@ -7,12 +7,22 @@
 // Declaração da nova função de parsing com verificação
 extern int yyparse_and_check();
 extern int linha_atual;  // Linha atual para mensagens de erro
+extern int gerar_bitcode;  // Flag para gerar bitcode
+extern int gerar_c;       // Flag para gerar código C
+
+// Suprime avisos de funções não utilizadas
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
 %}
 
 %%
 
 [ \t]              ; // Ignora espaços e tabs
 \n                 { linha_atual++; } // Incrementa contador de linhas
+
+"#bitcode"         { gerar_bitcode = 1; gerar_c = 0; }
+"#c"               { gerar_bitcode = 0; gerar_c = 1; }
+
 "print"            { return PRINT; }
 "if"               { return IF; }
 "else"             { return ELSE; }
@@ -71,11 +81,11 @@ extern int linha_atual;  // Linha atual para mensagens de erro
 [0-9]+             { yylval.intValue = atoi(yytext); return NUM; }
 [a-zA-Z_][a-zA-Z0-9_]* { yylval.id = strdup(yytext); return ID; }
 
-[ \t\n]+  { /* não faz nada - ignora sequências de espaços */ }
-
 .        { fprintf(stderr, "[ERRO LÉXICO] Linha %d: Caractere não reconhecido: '%s'\n", linha_atual, yytext); }
 
 %%
+
+#pragma GCC diagnostic pop
 
 // Função chamada ao fim da entrada
 int yywrap(void) {
@@ -84,6 +94,10 @@ int yywrap(void) {
 
 // Função principal do programa
 int main(int argc, char **argv) {
+    // Inicializa flags de geração de código
+    gerar_bitcode = 0;
+    gerar_c = 1;
+    
     // Se receber argumento na linha de comando, usa como arquivo de entrada
     if (argc > 1) {
         FILE *f = fopen(argv[1], "r");

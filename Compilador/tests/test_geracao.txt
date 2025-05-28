@@ -1,0 +1,7 @@
+# Exemplo de código Python para C
+int x = 3 + 4 * 2;
+int y = (5 + 3) * 2;
+int z = x + y;
+print(x);
+print(y);
+print(z); 
