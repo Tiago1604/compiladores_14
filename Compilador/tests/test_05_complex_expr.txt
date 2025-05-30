@@ -1,0 +1,2 @@
+int result;
+result = (10 + 5) * 2 - 8 / 2;
