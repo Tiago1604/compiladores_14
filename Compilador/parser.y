@@ -12,6 +12,10 @@ int yylex(void);                     // Função gerada pelo flex para o analisa
 void yyerror(const char *s);         // Função para reportar erros de sintaxe
 void type_error(const char* expected, const char* got, const char* var_name);  // Função para erros de tipo
 int linha_atual = 1;                 // Variável global para rastrear número da linha atual
+
+// Variáveis para geração de código C
+FILE* output_file = NULL;            // Arquivo de saída para código C (ou stdout)
+int indent_level = 0;                // Nível de indentação atual para código C
 %}
 
 %union {
@@ -81,11 +85,22 @@ program:
     {
         $$ = criarNoPrograma($1);
         raiz_ast = $$; // Guarda a raiz da AST
+        
+        // Adiciona os includes padrão do C
+        printf("#include <stdio.h>\n");
+        printf("#include <stdlib.h>\n\n");
+        printf("int main() {\n");
     }
     | /* vazio */
     { 
         $$ = criarNoPrograma(NULL); 
         raiz_ast = $$; // Guarda a raiz da AST
+        
+        // Adiciona os includes padrão do C mesmo para programa vazio
+        printf("#include <stdio.h>\n");
+        printf("#include <stdlib.h>\n\n");
+        printf("int main() {\n");
+        printf("    return 0;\n}");
     }
     ;
 
@@ -117,7 +132,6 @@ stmt:
     ;
 
 // Bloco de código (múltiplas declarações)
-// Simplificamos a definição de bloco para resolver conflitos
 block:
     COLON stmt
     {
@@ -147,8 +161,8 @@ decl:
         // Cria nó de declaração na AST
         $$ = criarNoDecl("int", $2);
         
-        // Também gera código C para a declaração
-        printf("int %s;\n", $2);
+        // Gera código C para a declaração
+        printf("    int %s;\n", $2);
         
         free($2);
     }
@@ -160,9 +174,13 @@ assign:
     {
         Simbolo *s = buscarSimbolo($1);
         if (!s) {
-           fprintf(stderr, "[AVISO] Linha %d: Implicitamente declarando variável '%s' como int\n", linha_atual, $1);
-           inserirSimboloCompleto($1, "int", SIM_VARIAVEL, linha_atual);
-           s = buscarSimbolo($1);
+            // Em Python, todas as variáveis são declaradas implicitamente
+            fprintf(stderr, "[AVISO] Linha %d: Implicitamente declarando variável '%s' como int\n", linha_atual, $1);
+            inserirSimboloCompleto($1, "int", SIM_VARIAVEL, linha_atual);
+            s = buscarSimbolo($1);
+            
+            // Gera a declaração em C
+            printf("    int %s;\n", $1);
         }
         
         // Verificação simples de tipo para demonstração
@@ -183,7 +201,7 @@ assign:
         $$ = criarNoAtrib(id_node, $3);
         
         // Gera código C para a atribuição
-        printf("%s = ", $1);
+        printf("    %s = ", $1);
         imprimirAST($3);  // Imprime a expressão
         printf(";\n");
         
@@ -223,7 +241,7 @@ print:
         $$ = criarNoPrint($3);
         
         // Gera código C para o printf
-        printf("printf(\"%%d\\n\", ");
+        printf("    printf(\"%%d\\n\", ");
         imprimirAST($3);  // Imprime a expressão em notação normal
         printf(");\n");
     }
@@ -268,11 +286,11 @@ if_stmt:
         $$ = criarNoIf($2, $3);
         
         // Gera código C para o if
-        printf("if (");
+        printf("    if (");
         imprimirAST($2);  // Imprime a condição
         printf(") {\n");
         imprimirAST($3);  // Imprime o bloco
-        printf("\n}\n");
+        printf("    }\n");
     }
     | IF if_cond block ELSE block
     {
@@ -280,13 +298,13 @@ if_stmt:
         $$ = criarNoIfElse($2, $3, $5);
         
         // Gera código C para if-else
-        printf("if (");
+        printf("    if (");
         imprimirAST($2);  // Imprime a condição
         printf(") {\n");
         imprimirAST($3);  // Imprime o bloco if
-        printf("\n} else {\n");
+        printf("    } else {\n");
         imprimirAST($5);  // Imprime o bloco else
-        printf("\n}\n");
+        printf("    }\n");
     }
     | IF error 
     {
@@ -340,9 +358,13 @@ expr:
         // Verificação de declaração de variável
         Simbolo *s = buscarSimbolo($1);
         if (!s) {
-           fprintf(stderr, "[AVISO] Linha %d: Implicitamente declarando variável '%s' como int\n", linha_atual, $1);
-           inserirSimboloCompleto($1, "int", SIM_VARIAVEL, linha_atual);
-           s = buscarSimbolo($1);
+            // Em Python, variáveis são declaradas implicitamente na primeira utilização
+            fprintf(stderr, "[AVISO] Linha %d: Implicitamente declarando variável '%s' como int\n", linha_atual, $1);
+            inserirSimboloCompleto($1, "int", SIM_VARIAVEL, linha_atual);
+            s = buscarSimbolo($1);
+            
+            // Gera código C para declaração
+            printf("    int %s;\n", $1);
         }
         
         // Verifica se a variável foi inicializada
@@ -373,8 +395,8 @@ expr:
         
         // Se não for constante, adiciona verificação em tempo de execução
         if ($3->tipo != AST_NUM) {
-            printf("// Verificação de divisão por zero adicionada\n");
-            printf("if (");
+            printf("    // Verificação de divisão por zero adicionada\n");
+            printf("    if (");
             // Imprime o divisor conforme seu tipo
             if ($3->tipo == AST_ID) {
                 printf("%s", $3->nome);
@@ -385,7 +407,7 @@ expr:
                 printf(")");
             }
             printf(" == 0) {\n");
-            printf("    fprintf(stderr, \"[ERRO EM TEMPO DE EXECUÇÃO] Divisão por zero na expressão: ");
+            printf("        fprintf(stderr, \"[ERRO EM TEMPO DE EXECUÇÃO] Divisão por zero na expressão: ");
             
             // Imprime a expressão completa para fins de diagnóstico
             imprimirAST($1);
@@ -393,8 +415,8 @@ expr:
             imprimirAST($3);
             
             printf("\\n\");\n");
-            printf("    exit(1);\n");
-            printf("}\n");
+            printf("        exit(1);\n");
+            printf("    }\n");
         }
     }
     ;
@@ -498,16 +520,21 @@ void type_error(const char* expected, const char* got, const char* var_name) {
 int yyparse_and_check() {
     int result = yyparse();
     
-    // Se o parsing foi bem-sucedido e temos uma AST, imprime a AST
-    if (result == 0 && raiz_ast != NULL) {
-        printf("\n[ÁRVORE DE SINTAXE ABSTRATA] Estrutura detalhada:\n");
-        printf("================================================\n");
-        imprimirASTDetalhada(raiz_ast, 0);
-        printf("================================================\n");
+    // Se o parsing foi bem-sucedido, adiciona o return 0; ao final do main()
+    if (result == 0) {
+        printf("    return 0;\n}\n");
         
-        // Libera a memória da AST
-        liberarAST(raiz_ast);
-        raiz_ast = NULL;
+        // Imprime a AST se solicitado
+        if (raiz_ast != NULL) {
+            fprintf(stderr, "\n[ÁRVORE DE SINTAXE ABSTRATA] Estrutura detalhada:\n");
+            fprintf(stderr, "================================================\n");
+            imprimirASTDetalhada(raiz_ast, 0);
+            fprintf(stderr, "================================================\n");
+            
+            // Libera a memória da AST
+            liberarAST(raiz_ast);
+            raiz_ast = NULL;
+        }
     }
     
     // Verifica variáveis não utilizadas
