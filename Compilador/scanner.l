@@ -4,6 +4,9 @@
 #include "parser.tab.h"
 #include "tabela.h"
 
+// Declaração da raiz da AST compartilhada
+extern NoAST* raiz_ast;
+
 // Declaração da nova função de parsing com verificação
 extern int yyparse_and_check();
 extern int linha_atual;  // Linha atual para mensagens de erro
@@ -71,9 +74,9 @@ extern int linha_atual;  // Linha atual para mensagens de erro
 [0-9]+             { yylval.intValue = atoi(yytext); return NUM; }
 [a-zA-Z_][a-zA-Z0-9_]* { yylval.id = strdup(yytext); return ID; }
 
-[ \t\n]+  { /* não faz nada - ignora sequências de espaços */ }
+[ \t\n]+           { /* não faz nada - ignora sequências de espaços */ }
 
-.        { fprintf(stderr, "[ERRO LÉXICO] Linha %d: Caractere não reconhecido: '%s'\n", linha_atual, yytext); }
+.                  { fprintf(stderr, "[ERRO LÉXICO] Linha %d: Caractere não reconhecido: '%s'\n", linha_atual, yytext); }
 
 %%
 

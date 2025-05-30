@@ -6,6 +6,8 @@
 #include "ast.h"
 #include "tabela.h"
 
+NoAST* raiz_ast = NULL;  // Raiz da AST global
+
 int yylex(void);                     // Função gerada pelo flex para o analisador léxico
 void yyerror(const char *s);         // Função para reportar erros de sintaxe
 void type_error(const char* expected, const char* got, const char* var_name);  // Função para erros de tipo
@@ -46,9 +48,17 @@ int linha_atual = 1;                 // Variável global para rastrear número d
 %token LBRACE RBRACE  // Tokens para chaves
 
 // Associação de tipos para as regras gramaticais
-%type <ast> expr      // Expressões retornam um nó AST
-%type <str> comp      // Comparadores retornam uma string
-%type <id> cond       // Condições retornam um id (string)
+%type <ast> expr          // Expressões retornam um nó AST
+%type <ast> stmt          // Comandos retornam um nó AST
+%type <ast> stmt_list     // Lista de comandos retorna um nó AST
+%type <ast> block         // Blocos de código retornam um nó AST
+%type <ast> assign        // Atribuições retornam um nó AST
+%type <ast> print         // Comandos print retornam um nó AST
+%type <ast> if_stmt       // Comandos if retornam um nó AST
+%type <ast> program       // Programa retorna um nó AST
+%type <ast> decl          // Declarações retornam um nó AST
+%type <ast> cond          // Condições retornam um nó AST
+%type <str> comp          // Comparadores retornam uma string
 
 // Definição de precedência e associatividade
 %left PLUS MINUS      // + e - têm mesma precedência, associativos à esquerda
@@ -62,31 +72,77 @@ int linha_atual = 1;                 // Variável global para rastrear número d
 
 // Um programa é uma sequência de declarações
 program:
-    program stmt     // Um programa pode ter várias declarações
-    |                // Ou pode ser vazio
+    program stmt     
+    {
+        // Adiciona o comando à lista de comandos do programa
+        if ($1 == NULL) {
+            // Primeiro comando do programa
+            $$ = criarNoPrograma($2);
+        } else {
+            // Adiciona à lista de comandos existente
+            NoAST *ultimo = $1->esquerda;
+            while (ultimo && ultimo->proximo) {
+                ultimo = ultimo->proximo;
+            }
+            
+            if (ultimo) {
+                ultimo->proximo = $2;
+                $$ = $1;
+            } else {
+                // Caso especial se a lista estiver vazia
+                $1->esquerda = $2;
+                $$ = $1;
+            }
+        }
+        raiz_ast = $$; // Guarda a raiz da AST
+    }
+    | /* vazio */           
+    { 
+        $$ = criarNoPrograma(NULL); 
+        raiz_ast = $$; // Guarda a raiz da AST
+    }
     ;
 
 // Tipos de declarações suportadas
 stmt:
-    decl             // Declaração de variável
-    | assign         // Atribuição de valor
-    | print          // Comando de impressão
-    | if_stmt        // Comando condicional
-    | block          // Blocos de código
+    decl SEMICOLON     { $$ = $1; }
+    | assign SEMICOLON { $$ = $1; }
+    | print SEMICOLON  { $$ = $1; }
+    | if_stmt          { $$ = $1; }
+    | block            { $$ = $1; }
     ;
 
 // Bloco de código (múltiplas declarações)
 block:
-    COLON
-    stmt 
-    | COLON LBRACE 
-    stmt_list RBRACE
+    COLON stmt 
+    {
+        // Cria um bloco com um único comando
+        $$ = criarNoBloco($2);
+    }
+    | COLON LBRACE stmt_list RBRACE
+    {
+        // Cria um bloco com vários comandos
+        $$ = criarNoBloco($3);
+    }
     ;
 
 // Lista de instruções dentro de um bloco
 stmt_list:
-    stmt                       // Uma única instrução
-    | stmt_list stmt           // Múltiplas instruções
+    stmt
+    {
+        // Cria um nó de lista de comandos com um único comando
+        $$ = criarNoListaCmd($1, NULL);
+    }
+    | stmt_list stmt
+    {
+        // Adiciona um comando à lista existente
+        NoAST *ultimo = $1;
+        while (ultimo->proximo) {
+            ultimo = ultimo->proximo;
+        }
+        ultimo->proximo = criarNoListaCmd($2, NULL);
+        $$ = $1;
+    }
     ;
 
 // Declaração de variável
@@ -99,11 +155,16 @@ decl:
             // Não causamos erro, apenas aviso - em Python, redeclaração é permitida
         }
         
-        // Adiciona variável à tabela de símbolos com informações mais completas
-        // Usando o número da linha atual do parser
+        // Adiciona variável à tabela de símbolos
         inserirSimboloCompleto($2, "int", SIM_VARIAVEL, @1.first_line);
-        printf("int %s;\n", $2);    // Gera código C para a declaração
-        free($2);                   // Libera a memória alocada para o identificador
+        
+        // Cria nó de declaração na AST
+        $$ = criarNoDecl("int", $2);
+        
+        // Também gera código C para a declaração
+        printf("int %s;\n", $2);
+        
+        free($2);
     }
     ;
 
@@ -130,16 +191,12 @@ assign:
             }
         }
         
-        // Verifica o tipo da expressão se for uma operação
-        if ($3->tipo == AST_OP) {
-            // Pode adicionar verificações específicas para operações aqui
-            char op_str[2] = {$3->operador, '\0'};
-            fprintf(stderr, "[INFO] Linha %d: Atribuindo resultado de operação '%s' à variável '%s'\n",
-                    linha_atual, op_str, $1);
-        }
-        
         // Marca como inicializada e utilizada
         marcarInicializado($1);
+        
+        // Cria nó de atribuição na AST
+        NoAST *id_node = criarNoId($1);
+        $$ = criarNoAtrib(id_node, $3);
         
         // Gera código C para a atribuição
         printf("%s = ", $1);
@@ -151,8 +208,7 @@ assign:
             atribuirValorInt($1, $3->valor);
         }
         
-        liberarAST($3);   // Libera memória da AST
-        free($1);         // Libera memória do identificador
+        free($1);  // Libera apenas o ID, a AST continua na memória
     }
     | ID ASSIGN error SEMICOLON {
         // Tratamento de erro sintático em atribuição
@@ -161,6 +217,7 @@ assign:
         yyerrok;    // Indica ao Bison que o erro foi recuperado
         yyclearin;  // Limpa token de erro no buffer
         free($1);   // Libera memória do identificador
+        $$ = NULL;  // Não há nó AST para retornar
     }
     | error ASSIGN expr SEMICOLON {
         // Tratamento de erro sintático em atribuição (lado esquerdo inválido)
@@ -168,12 +225,14 @@ assign:
         yyerrok;    // Indica ao Bison que o erro foi recuperado
         yyclearin;  // Limpa token de erro no buffer
         liberarAST($3);  // Libera memória da AST
+        $$ = NULL;  // Não há nó AST para retornar
     }
     | error SEMICOLON {
         // Tratamento de erro sintático genérico
         fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Atribuição mal formatada. Formato correto: identificador = expressão;\n", linha_atual);
         yyerrok;    // Indica ao Bison que o erro foi recuperado
         yyclearin;  // Limpa token de erro no buffer
+        $$ = NULL;  // Não há nó AST para retornar
     }
     ;
 
@@ -197,38 +256,47 @@ print:
         // Marca a variável como utilizada
         marcarUtilizado($3);
         
+        // Cria nó de impressão na AST
+        NoAST *id_node = criarNoId($3);
+        $$ = criarNoPrint(id_node);
+        
         // Gera código C para o printf
         printf("printf(\"%%d\\n\", %s);\n", $3);
+        
         free($3);  // Libera memória do identificador
     }
     | PRINT LPAREN NUM RPAREN
     {
+        // Cria nó de impressão para números literais
+        NoAST *num_node = criarNoNum($3);
+        $$ = criarNoPrint(num_node);
+        
         // Gera código C para imprimir uma constante
         printf("printf(\"%%d\\n\", %d);\n", $3);
     }
     | PRINT LPAREN expr RPAREN
     {
+        // Cria nó de impressão para expressões
+        $$ = criarNoPrint($3);
+        
         // Gera código C para imprimir uma expressão
         printf("printf(\"%%d\\n\", ");
         imprimirAST($3);  // Imprime a expressão em notação normal
         printf(");\n");
-        // Imprime a AST em ordem (implementação da travessia em ordem)
-        printf("Impressão em ordem da AST: ");
-        imprimirASTEmOrdem($3);
-        printf("\n");
-        liberarAST($3);  // Libera memória da AST
     }
     | PRINT LPAREN error RPAREN SEMICOLON {
         // Tratamento de erro sintático no print
         fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Expressão inválida no print. Comando print deve receber uma expressão válida\n", linha_atual);
         yyerrok;    // Indica ao Bison que o erro foi recuperado
         yyclearin;  // Limpa token de erro no buffer
+        $$ = NULL;  // Não há nó AST para retornar
     }
     | PRINT error SEMICOLON {
         // Tratamento de erro sintático no print (formato)
         fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Comando print mal formatado. Formato correto: print(expressão);\n", linha_atual);
         yyerrok;    // Indica ao Bison que o erro foi recuperado
         yyclearin;  // Limpa token de erro no buffer
+        $$ = NULL;  // Não há nó AST para retornar
     }
     ;
 
@@ -236,33 +304,52 @@ print:
 if_stmt:
     IF LPAREN cond RPAREN block
     {
+        // Cria nó if na AST
+        $$ = criarNoIf($3, $5);
+        
         // Gera código C para o if
-        printf("if (%s) {\n    // Código do bloco if\n}\n", $3);
-        free($3);  // Libera memória da condição
+        printf("if (");
+        imprimirAST($3);  // Imprime a condição
+        printf(") {\n");
+        imprimirAST($5);  // Imprime o bloco
+        printf("\n}\n");
     }
     | IF LPAREN cond RPAREN block ELSE block
     {
+        // Cria nó if-else na AST
+        $$ = criarNoIfElse($3, $5, $7);
+        
         // Gera código C para if-else
-        printf("if (%s) {\n    // Código do bloco if\n} else {\n    // Código do bloco else\n}\n", $3);
-        free($3);  // Libera memória da condição
+        printf("if (");
+        imprimirAST($3);  // Imprime a condição
+        printf(") {\n");
+        imprimirAST($5);  // Imprime o bloco if
+        printf("\n} else {\n");
+        imprimirAST($7);  // Imprime o bloco else
+        printf("\n}\n");
     }
     | IF LPAREN error RPAREN block SEMICOLON {
         // Tratamento de erro sintático na condição do if
         fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Condição inválida no if. Deve ser uma expressão booleana válida ou comparação\n", linha_atual);
         yyerrok;    // Indica ao Bison que o erro foi recuperado
         yyclearin;  // Limpa token de erro no buffer
+        liberarAST($5);  // Libera memória do bloco
+        $$ = NULL;  // Não há nó AST para retornar
     }
     | IF error SEMICOLON {
         // Tratamento de erro sintático no formato do if
         fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Estrutura if mal formatada. Formato correto: if (condição) : comando;\n", linha_atual);
         yyerrok;    // Indica ao Bison que o erro foi recuperado
         yyclearin;  // Limpa token de erro no buffer
+        $$ = NULL;  // Não há nó AST para retornar
     }
     | IF LPAREN cond RPAREN error SEMICOLON {
         // Tratamento de erro sintático no bloco do if
         fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Bloco do if mal formatado. Esperado ':' seguido de comando ou bloco\n", linha_atual);
         yyerrok;
         yyclearin;
+        liberarAST($3);  // Libera memória da condição
+        $$ = NULL;  // Não há nó AST para retornar
     }
     ;
 
@@ -270,105 +357,34 @@ if_stmt:
 cond:
     expr comp expr
     {
-        // Cria uma string representando a condição
-        char buffer[256] = "";
-        char temp[128] = "";
+        // Determina o tipo de comparação
+        TipoComparacao tipo_comp;
+        if (strcmp($2, "==") == 0) tipo_comp = COMP_IGUAL;
+        else if (strcmp($2, "!=") == 0) tipo_comp = COMP_DIFERENTE;
+        else if (strcmp($2, ">") == 0) tipo_comp = COMP_MAIOR;
+        else if (strcmp($2, "<") == 0) tipo_comp = COMP_MENOR;
+        else if (strcmp($2, ">=") == 0) tipo_comp = COMP_MAIOR_IGUAL;
+        else if (strcmp($2, "<=") == 0) tipo_comp = COMP_MENOR_IGUAL;
         
-        strcat(buffer, "(");
+        // Cria nó de comparação na AST
+        $$ = criarNoComp(tipo_comp, $1, $3);
         
-        // Captura a representação da primeira expressão
-        switch($1->tipo) {
-            case AST_NUM:
-                sprintf(temp, "%d", $1->valor);
-                strcat(buffer, temp);
-                break;
-            case AST_ID:
-                strcat(buffer, $1->nome);
-                break;
-            case AST_OP:
-                // Para operações, usamos parênteses para preservar a precedência
-                strcat(buffer, "(");
-                
-                // Recursivamente construir a representação para o lado esquerdo
-                if ($1->esquerda) {
-                    if ($1->esquerda->tipo == AST_NUM) {
-                        sprintf(temp, "%d", $1->esquerda->valor);
-                        strcat(buffer, temp);
-                    } else if ($1->esquerda->tipo == AST_ID) {
-                        strcat(buffer, $1->esquerda->nome);
-                    }
-                }
-                
-                // Adiciona o operador
-                sprintf(temp, " %c ", $1->operador);
-                strcat(buffer, temp);
-                
-                // Recursivamente construir a representação para o lado direito
-                if ($1->direita) {
-                    if ($1->direita->tipo == AST_NUM) {
-                        sprintf(temp, "%d", $1->direita->valor);
-                        strcat(buffer, temp);
-                    } else if ($1->direita->tipo == AST_ID) {
-                        strcat(buffer, $1->direita->nome);
-                    }
-                }
-                
-                strcat(buffer, ")");
-                break;
-        }
-        
-        // Adiciona o operador de comparação
-        sprintf(temp, " %s ", $2);
-        strcat(buffer, temp);
-        
-        // Captura a representação da segunda expressão
-        switch($3->tipo) {
-            case AST_NUM:
-                sprintf(temp, "%d", $3->valor);
-                strcat(buffer, temp);
-                break;
-            case AST_ID:
-                strcat(buffer, $3->nome);
-                break;
-            case AST_OP:
-                // Para operações, usamos parênteses para preservar a precedência
-                strcat(buffer, "(");
-                
-                // Recursivamente construir a representação para o lado esquerdo
-                if ($3->esquerda) {
-                    if ($3->esquerda->tipo == AST_NUM) {
-                        sprintf(temp, "%d", $3->esquerda->valor);
-                        strcat(buffer, temp);
-                    } else if ($3->esquerda->tipo == AST_ID) {
-                        strcat(buffer, $3->esquerda->nome);
-                    }
-                }
-                
-                // Adiciona o operador
-                sprintf(temp, " %c ", $3->operador);
-                strcat(buffer, temp);
-                
-                // Recursivamente construir a representação para o lado direito
-                if ($3->direita) {
-                    if ($3->direita->tipo == AST_NUM) {
-                        sprintf(temp, "%d", $3->direita->valor);
-                        strcat(buffer, temp);
-                    } else if ($3->direita->tipo == AST_ID) {
-                        strcat(buffer, $3->direita->nome);
-                    }
-                }
-                
-                strcat(buffer, ")");
-                break;
-        }
-        
-        strcat(buffer, ")");
-        $$ = strdup(buffer);  // Retorna a string criada
-        free($2);           // Libera memória do comparador
-        liberarAST($1);     // Libera árvore da primeira expressão
-        liberarAST($3);     // Libera árvore da segunda expressão
+        free($2);  // Libera a string do comparador
     }
-    | ID { $$ = strdup($1); }  // Condição simples (apenas um identificador)
+    | ID
+    { 
+        // Cria nó para variável usada como condição
+        Simbolo *s = buscarSimbolo($1);
+        if (!s) {
+            fprintf(stderr, "[AVISO] Linha %d: Implicitamente declarando variável '%s' como int\n", linha_atual, $1);
+            inserirSimboloCompleto($1, "int", SIM_VARIAVEL, linha_atual);
+        } else {
+            marcarUtilizado($1);
+        }
+        
+        $$ = criarNoId($1);
+        free($1);
+    }
     ;
 
 // Operadores de comparação
@@ -445,6 +461,7 @@ expr:
     | error {
         fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Expressão mal formada. Verifique a sintaxe\n", linha_atual);
         yyerrok;
+        $$ = NULL;  // Não há nó AST para retornar
     }
     ;
 
@@ -543,11 +560,23 @@ void type_error(const char* expected, const char* got, const char* var_name) {
             linha_atual, var_name, expected, got);
 }
 
-// Função adicional para verificar variáveis não utilizadas no final do parsing
+// Função adicional para verificar variáveis não utilizadas e imprimir a AST
 int yyparse_and_check() {
     int result = yyparse();
     
-    // Depois de terminar o parsing, verifica variáveis não utilizadas
+    // Se o parsing foi bem-sucedido e temos uma AST, imprime a AST
+    if (result == 0 && raiz_ast != NULL) {
+        printf("\n[ÁRVORE DE SINTAXE ABSTRATA] Estrutura detalhada:\n");
+        printf("================================================\n");
+        imprimirASTDetalhada(raiz_ast, 0);
+        printf("================================================\n");
+        
+        // Libera a memória da AST
+        liberarAST(raiz_ast);
+        raiz_ast = NULL;
+    }
+    
+    // Verifica variáveis não utilizadas
     verificarVariaveisNaoUtilizadas();
     
     return result;
