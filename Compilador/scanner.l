@@ -1,6 +1,7 @@
 %{
 #include <string.h>
 #include <stdlib.h>
+#include "tipos.h"
 #include "parser.tab.h"
 #include "tabela.h"
 
@@ -14,69 +15,67 @@ extern int linha_atual;  // Linha atual para mensagens de erro
 
 %%
 
-[ \t]              ; // Ignora espaços e tabs
-\n                 { linha_atual++; } // Incrementa contador de linhas
-"print"            { return PRINT; }
-"if"               { return IF; }
-"else"             { return ELSE; }
-"int"              { return INT; }
-"float"            { return FLOAT; }
-"char"             { return CHAR; }
-"return"           { return RETURN; }
-"while"            { return WHILE; }
-"for"              { return FOR; }
-"break"            { return BREAK; }
-"continue"         { return CONTINUE; }
-"True"             { return TRUE; }
-"False"            { return FALSE; }
-"None"             { return NONE; }
-"not"              { return NOT; }
-"and"              { return AND; }
-"or"               { return OR; }
-"is"               { return IS; }
-"lambda"           { return LAMBDA; }
-"del"              { return DEL; }
-"global"           { return GLOBAL; }
-"nonlocal"         { return NONLOCAL; }
-"assert"           { return ASSERT; }
-"raise"            { return RAISE; }
-"try"              { return TRY; }
-"except"           { return EXCEPT; }
-"finally"          { return FINALLY; }
-"with"             { return WITH; }
-"yield"            { return YIELD; }
-"def"              { return DEF; }
-"class"            { return CLASS; }
-"async"            { return ASYNC; }
-"await"            { return AWAIT; }
-"match"            { return MATCH; }
-"case"             { return CASE; }
-"type"             { return TYPE; }
+[ \t]               ; // Ignora espaços e tabs
+\n                  { linha_atual++; } // Incrementa contador de linhas
+"print"             { return PRINT; }
+"if"                { return IF; }
+"else"              { return ELSE; }
+"int"               { return INT; }
+"float"             { return FLOAT; }
+"char"              { return CHAR; }
+"return"            { return RETURN; }
+"while"             { return WHILE; }
+"for"               { return FOR; }
+"break"             { return BREAK; }
+"continue"          { return CONTINUE; }
+"True"              { return TRUE; }
+"False"             { return FALSE; }
+"None"              { return NONE; }
+"not"               { return NOT; }
+"and"               { return AND; }
+"or"                { return OR; }
+"is"                { return IS; }
+"lambda"            { return LAMBDA; }
+"del"               { return DEL; }
+"global"            { return GLOBAL; }
+"nonlocal"          { return NONLOCAL; }
+"assert"            { return ASSERT; }
+"raise"             { return RAISE; }
+"try"               { return TRY; }
+"except"            { return EXCEPT; }
+"finally"           { return FINALLY; }
+"with"              { return WITH; }
+"yield"             { return YIELD; }
+"def"               { return DEF; }
+"class"             { return CLASS; }
+"async"             { return ASYNC; }
+"await"             { return AWAIT; }
+"match"             { return MATCH; }
+"case"              { return CASE; }
+"type"              { return TYPE; }
 
-"=="               { return EQ; }
-"!="               { return NEQ; }
-">="               { return GE; }
-"<="               { return LE; }
-">"                { return GT; }
-"<"                { return LT; }
-"="                { return ASSIGN; }
-";"                { return SEMICOLON; }
-"("                { return LPAREN; }
-")"                { return RPAREN; }
-"+"                { return PLUS; }
-"-"                { return MINUS; }
-"*"                { return TIMES; }
-"/"                { return DIVIDE; }
-":"                { return COLON; }
-"{"                { return LBRACE; }
-"}"                { return RBRACE; }
+"=="                { return EQ; }
+"!="                { return NEQ; }
+">="                { return GE; }
+"<="                { return LE; }
+">"                 { return GT; }
+"<"                 { return LT; }
+"="                 { return ASSIGN; }
+";"                 { return SEMICOLON; }
+"("                 { return LPAREN; }
+")"                 { return RPAREN; }
+"+"                 { return PLUS; }
+"-"                 { return MINUS; }
+"*"                 { return TIMES; }
+"/"                 { return DIVIDE; }
+":"                 { return COLON; }
+"{"                 { return LBRACE; }
+"}"                 { return RBRACE; }
 
-[0-9]+             { yylval.intValue = atoi(yytext); return NUM; }
+[0-9]+              { yylval.intValue = atoi(yytext); return NUM; }
 [a-zA-Z_][a-zA-Z0-9_]* { yylval.id = strdup(yytext); return ID; }
 
-[ \t\n]+           { /* não faz nada - ignora sequências de espaços */ }
-
-.                  { fprintf(stderr, "[ERRO LÉXICO] Linha %d: Caractere não reconhecido: '%s'\n", linha_atual, yytext); }
+.                   { fprintf(stderr, "[ERRO LÉXICO] Linha %d: Caractere não reconhecido: '%s'\n", linha_atual, yytext); }
 
 %%
 

@@ -23,10 +23,6 @@ int linha_atual = 1;                 // Variável global para rastrear número d
     NoAST* ast;       // Para nós da AST
 }
 
-%code requires {
-    #include "tipos.h"  // Inclui tipo NoAST no Bison
-}
-
 // Declaração de tokens para operadores relacionais
 %token EQ NEQ GE LE GT LT
 // Tokens para estruturas de controle
@@ -59,74 +55,41 @@ int linha_atual = 1;                 // Variável global para rastrear número d
 %type <ast> decl          // Declarações retornam um nó AST
 %type <ast> cond          // Condições retornam um nó AST
 %type <str> comp          // Comparadores retornam uma string
+%type <ast> if_cond       // Condição do if retorna um nó AST
 
 // Definição de precedência e associatividade
+%left OR
+%left AND
+%nonassoc EQ NEQ GE LE GT LT // Operadores de comparação não são associativos
 %left PLUS MINUS      // + e - têm mesma precedência, associativos à esquerda
 %left TIMES DIVIDE    // * e / têm precedência maior que + e -, associativos à esquerda
-%nonassoc COLON       // : não é associativo
-%nonassoc ELSE        // else não é associativo
+
+// Resolução do conflito do dangling else
+%nonassoc LOWER_THAN_ELSE  // Precedência mais baixa para if sem else
+%nonassoc ELSE             // Precedência mais alta para else
+
+// Definição do símbolo inicial da gramática
+%start program
 
 %%
 
-// Inicio da gramática
+// Início da gramática
 
 // Um programa é uma sequência de declarações
 program:
-    program stmt     
+    stmt_list
     {
-        // Adiciona o comando à lista de comandos do programa
-        if ($1 == NULL) {
-            // Primeiro comando do programa
-            $$ = criarNoPrograma($2);
-        } else {
-            // Adiciona à lista de comandos existente
-            NoAST *ultimo = $1->esquerda;
-            while (ultimo && ultimo->proximo) {
-                ultimo = ultimo->proximo;
-            }
-            
-            if (ultimo) {
-                ultimo->proximo = $2;
-                $$ = $1;
-            } else {
-                // Caso especial se a lista estiver vazia
-                $1->esquerda = $2;
-                $$ = $1;
-            }
-        }
+        $$ = criarNoPrograma($1);
         raiz_ast = $$; // Guarda a raiz da AST
     }
-    | /* vazio */           
+    | /* vazio */
     { 
         $$ = criarNoPrograma(NULL); 
         raiz_ast = $$; // Guarda a raiz da AST
     }
     ;
 
-// Tipos de declarações suportadas
-stmt:
-    decl SEMICOLON     { $$ = $1; }
-    | assign SEMICOLON { $$ = $1; }
-    | print SEMICOLON  { $$ = $1; }
-    | if_stmt          { $$ = $1; }
-    | block            { $$ = $1; }
-    ;
-
-// Bloco de código (múltiplas declarações)
-block:
-    COLON stmt 
-    {
-        // Cria um bloco com um único comando
-        $$ = criarNoBloco($2);
-    }
-    | COLON LBRACE stmt_list RBRACE
-    {
-        // Cria um bloco com vários comandos
-        $$ = criarNoBloco($3);
-    }
-    ;
-
-// Lista de instruções dentro de um bloco
+// Lista de instruções (stmts)
 stmt_list:
     stmt
     {
@@ -142,6 +105,29 @@ stmt_list:
         }
         ultimo->proximo = criarNoListaCmd($2, NULL);
         $$ = $1;
+    }
+    ;
+
+// Tipos de declarações suportadas
+stmt:
+    decl SEMICOLON     { $$ = $1; }
+    | assign SEMICOLON { $$ = $1; }
+    | print SEMICOLON  { $$ = $1; }
+    | if_stmt          { $$ = $1; }
+    ;
+
+// Bloco de código (múltiplas declarações)
+// Simplificamos a definição de bloco para resolver conflitos
+block:
+    COLON stmt
+    {
+        // Cria um bloco com um único comando
+        $$ = criarNoBloco($2);
+    }
+    | COLON LBRACE stmt_list RBRACE
+    {
+        // Cria um bloco com múltiplos comandos
+        $$ = criarNoBloco($3);
     }
     ;
 
@@ -172,13 +158,11 @@ decl:
 assign:
     ID ASSIGN expr
     {
-        // Busca variável na tabela de símbolos
         Simbolo *s = buscarSimbolo($1);
         if (!s) {
-            // No Python, podemos usar variáveis antes de declará-las (convertemos para C)
-            fprintf(stderr, "[AVISO] Linha %d: Implicitamente declarando variável '%s' como int\n", linha_atual, $1);
-            inserirSimboloCompleto($1, "int", SIM_VARIAVEL, linha_atual);
-            s = buscarSimbolo($1);
+           fprintf(stderr, "[AVISO] Linha %d: Implicitamente declarando variável '%s' como int\n", linha_atual, $1);
+           inserirSimboloCompleto($1, "int", SIM_VARIAVEL, linha_atual);
+           s = buscarSimbolo($1);
         }
         
         // Verificação simples de tipo para demonstração
@@ -210,7 +194,8 @@ assign:
         
         free($1);  // Libera apenas o ID, a AST continua na memória
     }
-    | ID ASSIGN error SEMICOLON {
+    | ID ASSIGN error
+    {
         // Tratamento de erro sintático em atribuição
         fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Expressão inválida na atribuição para a variável '%s'. Deve ser uma expressão válida\n", 
                 linha_atual, $1);
@@ -219,7 +204,8 @@ assign:
         free($1);   // Libera memória do identificador
         $$ = NULL;  // Não há nó AST para retornar
     }
-    | error ASSIGN expr SEMICOLON {
+    | error ASSIGN expr 
+    {
         // Tratamento de erro sintático em atribuição (lado esquerdo inválido)
         fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Identificador inválido no lado esquerdo da atribuição\n", linha_atual);
         yyerrok;    // Indica ao Bison que o erro foi recuperado
@@ -227,128 +213,87 @@ assign:
         liberarAST($3);  // Libera memória da AST
         $$ = NULL;  // Não há nó AST para retornar
     }
-    | error SEMICOLON {
-        // Tratamento de erro sintático genérico
-        fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Atribuição mal formatada. Formato correto: identificador = expressão;\n", linha_atual);
-        yyerrok;    // Indica ao Bison que o erro foi recuperado
-        yyclearin;  // Limpa token de erro no buffer
-        $$ = NULL;  // Não há nó AST para retornar
-    }
     ;
 
 // Comando print
 print:
-    PRINT LPAREN ID RPAREN
+    PRINT LPAREN expr RPAREN
     {
-        // Verifica se a variável existe na tabela de símbolos
-        Simbolo *s = buscarSimbolo($3);
-        if (!s) {
-            fprintf(stderr, "[ERRO DE REFERÊNCIA] Linha %d: Variável '%s' não foi declarada antes de ser usada no print\n", linha_atual, $3);
-            YYERROR;  // Reporta erro ao Bison
-        }
-        
-        // Verifica se a variável foi inicializada
-        if (!s->inicializado) {
-            fprintf(stderr, "[AVISO] Linha %d: Variável '%s' pode não ter sido inicializada antes do print\n", linha_atual, $3);
-            // Não causamos erro, apenas aviso
-        }
-        
-        // Marca a variável como utilizada
-        marcarUtilizado($3);
-        
         // Cria nó de impressão na AST
-        NoAST *id_node = criarNoId($3);
-        $$ = criarNoPrint(id_node);
-        
-        // Gera código C para o printf
-        printf("printf(\"%%d\\n\", %s);\n", $3);
-        
-        free($3);  // Libera memória do identificador
-    }
-    | PRINT LPAREN NUM RPAREN
-    {
-        // Cria nó de impressão para números literais
-        NoAST *num_node = criarNoNum($3);
-        $$ = criarNoPrint(num_node);
-        
-        // Gera código C para imprimir uma constante
-        printf("printf(\"%%d\\n\", %d);\n", $3);
-    }
-    | PRINT LPAREN expr RPAREN
-    {
-        // Cria nó de impressão para expressões
         $$ = criarNoPrint($3);
         
-        // Gera código C para imprimir uma expressão
+        // Gera código C para o printf
         printf("printf(\"%%d\\n\", ");
         imprimirAST($3);  // Imprime a expressão em notação normal
         printf(");\n");
     }
-    | PRINT LPAREN error RPAREN SEMICOLON {
+    | PRINT LPAREN error RPAREN 
+    {
         // Tratamento de erro sintático no print
         fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Expressão inválida no print. Comando print deve receber uma expressão válida\n", linha_atual);
         yyerrok;    // Indica ao Bison que o erro foi recuperado
         yyclearin;  // Limpa token de erro no buffer
         $$ = NULL;  // Não há nó AST para retornar
     }
-    | PRINT error SEMICOLON {
+    | PRINT error
+    {
         // Tratamento de erro sintático no print (formato)
-        fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Comando print mal formatado. Formato correto: print(expressão);\n", linha_atual);
+        fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Comando print mal formatado. Sintaxe correta: print(expressão);\n", linha_atual);
         yyerrok;    // Indica ao Bison que o erro foi recuperado
         yyclearin;  // Limpa token de erro no buffer
         $$ = NULL;  // Não há nó AST para retornar
     }
     ;
 
+// Nova regra auxiliar para condição do if para reduzir ambiguidade
+if_cond:
+    LPAREN cond RPAREN
+    {
+        $$ = $2;
+    }
+    | LPAREN error RPAREN
+    {
+        fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Condição inválida no if. Deve ser uma expressão booleana válida ou comparação\n", linha_atual);
+        yyerrok;
+        yyclearin;
+        $$ = NULL;
+    }
+    ;
+
 // Comando condicional if
 if_stmt:
-    IF LPAREN cond RPAREN block
+    IF if_cond block %prec LOWER_THAN_ELSE
     {
         // Cria nó if na AST
-        $$ = criarNoIf($3, $5);
+        $$ = criarNoIf($2, $3);
         
         // Gera código C para o if
         printf("if (");
-        imprimirAST($3);  // Imprime a condição
+        imprimirAST($2);  // Imprime a condição
         printf(") {\n");
-        imprimirAST($5);  // Imprime o bloco
+        imprimirAST($3);  // Imprime o bloco
         printf("\n}\n");
     }
-    | IF LPAREN cond RPAREN block ELSE block
+    | IF if_cond block ELSE block
     {
         // Cria nó if-else na AST
-        $$ = criarNoIfElse($3, $5, $7);
+        $$ = criarNoIfElse($2, $3, $5);
         
         // Gera código C para if-else
         printf("if (");
-        imprimirAST($3);  // Imprime a condição
+        imprimirAST($2);  // Imprime a condição
         printf(") {\n");
-        imprimirAST($5);  // Imprime o bloco if
+        imprimirAST($3);  // Imprime o bloco if
         printf("\n} else {\n");
-        imprimirAST($7);  // Imprime o bloco else
+        imprimirAST($5);  // Imprime o bloco else
         printf("\n}\n");
     }
-    | IF LPAREN error RPAREN block SEMICOLON {
-        // Tratamento de erro sintático na condição do if
-        fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Condição inválida no if. Deve ser uma expressão booleana válida ou comparação\n", linha_atual);
-        yyerrok;    // Indica ao Bison que o erro foi recuperado
-        yyclearin;  // Limpa token de erro no buffer
-        liberarAST($5);  // Libera memória do bloco
-        $$ = NULL;  // Não há nó AST para retornar
-    }
-    | IF error SEMICOLON {
+    | IF error 
+    {
         // Tratamento de erro sintático no formato do if
-        fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Estrutura if mal formatada. Formato correto: if (condição) : comando;\n", linha_atual);
+        fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Estrutura if mal formatada. Sintaxe correta: if (condição) : comando;\n", linha_atual);
         yyerrok;    // Indica ao Bison que o erro foi recuperado
         yyclearin;  // Limpa token de erro no buffer
-        $$ = NULL;  // Não há nó AST para retornar
-    }
-    | IF LPAREN cond RPAREN error SEMICOLON {
-        // Tratamento de erro sintático no bloco do if
-        fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Bloco do if mal formatado. Esperado ':' seguido de comando ou bloco\n", linha_atual);
-        yyerrok;
-        yyclearin;
-        liberarAST($3);  // Libera memória da condição
         $$ = NULL;  // Não há nó AST para retornar
     }
     ;
@@ -371,19 +316,10 @@ cond:
         
         free($2);  // Libera a string do comparador
     }
-    | ID
-    { 
-        // Cria nó para variável usada como condição
-        Simbolo *s = buscarSimbolo($1);
-        if (!s) {
-            fprintf(stderr, "[AVISO] Linha %d: Implicitamente declarando variável '%s' como int\n", linha_atual, $1);
-            inserirSimboloCompleto($1, "int", SIM_VARIAVEL, linha_atual);
-        } else {
-            marcarUtilizado($1);
-        }
-        
-        $$ = criarNoId($1);
-        free($1);
+    | expr
+    {
+        // Qualquer expressão pode ser usada como condição
+        $$ = $1;
     }
     ;
 
@@ -404,17 +340,19 @@ expr:
         // Verificação de declaração de variável
         Simbolo *s = buscarSimbolo($1);
         if (!s) {
-            // Em Python, variáveis podem ser usadas antes de declaradas
-            fprintf(stderr, "[AVISO] Linha %d: Implicitamente declarando variável '%s' como int\n", linha_atual, $1);
-            inserirSimboloCompleto($1, "int", SIM_VARIAVEL, linha_atual);
-        } else {
-            // Verifica se a variável foi inicializada
-            if (!s->inicializado) {
-                fprintf(stderr, "[AVISO] Linha %d: Variável '%s' está sendo usada antes de receber um valor\n", linha_atual, $1);
-            }
-            // Marca a variável como utilizada
-            marcarUtilizado($1);
+           fprintf(stderr, "[AVISO] Linha %d: Implicitamente declarando variável '%s' como int\n", linha_atual, $1);
+           inserirSimboloCompleto($1, "int", SIM_VARIAVEL, linha_atual);
+           s = buscarSimbolo($1);
         }
+        
+        // Verifica se a variável foi inicializada
+        if (s && !s->inicializado) {
+            fprintf(stderr, "[AVISO] Linha %d: Variável '%s' está sendo usada antes de receber um valor\n", linha_atual, $1);
+        }
+        
+        // Marca a variável como utilizada
+        if (s) marcarUtilizado($1);
+        
         $$ = criarNoId($1);  // Cria nó para variável
         free($1);           // Libera memória do identificador
     }
@@ -426,7 +364,8 @@ expr:
         // Verifica divisão por zero se o divisor for uma constante
         if ($3->tipo == AST_NUM && $3->valor == 0) {
             fprintf(stderr, "[ERRO ARITMÉTICO] Linha %d: Divisão por zero detectada em tempo de compilação\n", linha_atual);
-            YYERROR;  // Reporta erro ao Bison
+            // CORREÇÃO: Usar YYABORT em vez de YYERROR para garantir que o parsing seja completamente interrompido
+            YYABORT;  // Aborta completamente o parsing para o teste 10
         }
         
         // Cria o nó de operação de divisão
@@ -457,11 +396,6 @@ expr:
             printf("    exit(1);\n");
             printf("}\n");
         }
-    }
-    | error {
-        fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Expressão mal formada. Verifique a sintaxe\n", linha_atual);
-        yyerrok;
-        $$ = NULL;  // Não há nó AST para retornar
     }
     ;
 

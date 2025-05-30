@@ -6,6 +6,6 @@ for file in tests/*.txt; do
   echo "Arquivo: $file"
   echo "----------------------"
   echo "Simulando entrada: $(cat $file)"
-  ./main < $file
+  ./compilador < $file
   echo ""
 done
