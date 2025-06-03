@@ -26,14 +26,16 @@ int pending_indents = 0; // Indentações pendentes para processar
 
 #.*                 ; // Comentários em Python (ignora até o final da linha)
 
-"print"             { return PRINT; }
-"if"                { return IF; }
-"else"              { return ELSE; }
+"print"             { return comando_print; }
+"if"                { return comando_if; }
+"else"              { return comando_else; }
 "int"               { return INT; }
 "float"             { return FLOAT; }
 "char"              { return CHAR; }
-"while"             { return WHILE; }
-"for"               { return FOR; }
+"while"             { return comando_while; }
+"for"               { return comando_for; }
+"in"                { return comando_in; }
+"range"             { return comando_range; }
 "break"             { return BREAK; }
 "continue"          { return CONTINUE; }
 "True"              { return TRUE; }
@@ -47,23 +49,23 @@ int pending_indents = 0; // Indentações pendentes para processar
 "return"            { return RETURN; }
 "class"             { return CLASS; }
 
-"=="                { return EQ; }
-"!="                { return NEQ; }
-">="                { return GE; }
-"<="                { return LE; }
-">"                 { return GT; }
-"<"                 { return LT; }
-"="                 { return ASSIGN; }
-";"                 { return SEMICOLON; } // Usado para terminação em nossa sintaxe
-"("                 { return LPAREN; }
-")"                 { return RPAREN; }
-"+"                 { return PLUS; }
-"-"                 { return MINUS; }
-"*"                 { return TIMES; }
-"/"                 { return DIVIDE; }
-":"                 { return COLON; }  // Importante para blocos em Python
-"{"                 { return LBRACE; } // Para blocos explícitos em nossa sintaxe
-"}"                 { return RBRACE; } // Para blocos explícitos em nossa sintaxe
+"=="                { yylval.str = strdup("=="); return comparador_igual; }
+"!="                { yylval.str = strdup("!="); return comparador_diferente; }
+">="                { yylval.str = strdup(">="); return comparador_maior_igual; }
+"<="                { yylval.str = strdup("<="); return comparador_menor_igual; }
+">"                 { yylval.str = strdup(">"); return comparador_maior_que; }
+"<"                 { yylval.str = strdup("<"); return comparador_menor_que; }
+"="                 { yylval.str = strdup("="); return atribuicao_igual; }
+";"                 { return caracter_pontoEVirgula; } // Usado para terminação em nossa sintaxe
+"("                 { return caracter_abreParentese; }
+")"                 { return caracter_fechaParentese; }
+"+"                 { yylval.str = strdup("+"); return operador_mais; }
+"-"                 { yylval.str = strdup("-"); return operador_menos; }
+"*"                 { yylval.str = strdup("*"); return operador_multiplicacao; }
+"/"                 { yylval.str = strdup("/"); return operador_divisao; }
+":"                 { return caracter_doispontos; }  // Importante para blocos em Python
+"{"                 { return caracter_abreChave; } // Para blocos explícitos em nossa sintaxe
+"}"                 { return caracter_fechaChave; } // Para blocos explícitos em nossa sintaxe
 
 [0-9]+              { yylval.intValue = atoi(yytext); return NUM; }
 [a-zA-Z_][a-zA-Z0-9_]* { yylval.id = strdup(yytext); return ID; }
