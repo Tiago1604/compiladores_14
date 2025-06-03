@@ -10,8 +10,9 @@ nav:
     - Ferramentas: planejamento/ferramentas.md
     - Planejamento das Sprints: planejamento/planejamento_das_sprints.md
   - Decisões Técnicas: decisoes/decisao.md
-  - Problemas e Soluções: problemas_e_solucoes/problemas_e_solucoes1.md
-  - Problemas e Soluções 2: problemas_e_solucoes/problemas_e_solucoes2.md
+  - Problemas e Soluções: 
+    - Problemas e Soluções 1: problemas_e_solucoes/problemas_e_solucoes1.md
+    - Problemas e Soluções 2: problemas_e_solucoes/problemas_e_solucoes2.md
   - Atas de Reunião:
     - Ata 1: atas/ata1.md
     - Ata 2: atas/ata2.md
@@ -27,7 +28,6 @@ nav:
   - Ponto de Controle:
     - Ponto de Controle 1: ponto_de_controle/ponto_de_controle1.md
     - Ponto de Controle 2: ponto_de_controle/ponto_de_controle2.md	
-
 theme:
   logo: assets/logo.jpg
   name: material
