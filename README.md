@@ -7,6 +7,8 @@ Bem-vindo ao repositório da disciplina de **Compiladores**.
 Nesta matéria, exploraremos os fundamentos e os mecanismos envolvidos na construção de compiladores — programas que traduzem código-fonte de uma linguagem de programação para outra, geralmente para linguagem de máquina.
 O objetivo principal é compreender como linguagens de programação são interpretadas e executadas por computadores, além de desenvolver um compilador de `Python` para `C` como projeto prático, esse compilador será desenvolvido utilizando o Bison e Flex.
 
+Link para o pages: [Link](https://tiago1604.github.io/compiladores_14/)
+
 ## Estrutura do Repositório
 
 ### Descrição dos Diretórios
@@ -39,6 +41,9 @@ Essa estrutura foi projetada para organizar o projeto de forma clara, separando 
 
 3. **Entre em Compilador**
     - Para compilar manualmente:
+   ```
+    cd Compilador
+    ```
     ```
     bison -d parser.y
     ```
@@ -56,6 +61,8 @@ Essa estrutura foi projetada para organizar o projeto de forma clara, separando 
     ```
     ./compilador < entrada.txt
     ```
+
+## Ajustes e Melhorias
 
 ## Atividades Semanais
 
