@@ -27,27 +27,50 @@ int indent_level = 0;                // Nível de indentação atual para códig
     NoAST* ast;       // Para nós da AST
 }
 
-// Declaração de tokens para operadores relacionais
-%token EQ NEQ GE LE GT LT
-// Tokens para estruturas de controle
-%token IF ELSE COLON
+// Tokens para operadores
+%token <str> operador_mais
+%token <str> operador_menos
+%token <str> operador_multiplicacao
+%token <str> operador_divisao
+
+// Token para atribuição
+%token <str> atribuicao_igual
+
+// Tokens para comandos
+%token comando_print
+%token comando_if
+%token comando_else
+%token comando_while
+%token comando_for
+%token comando_in
+%token comando_range
+
+// Tokens para comparadores
+%token <str> comparador_igual
+%token <str> comparador_diferente
+%token <str> comparador_maior_que
+%token <str> comparador_menor_que
+%token <str> comparador_maior_igual
+%token <str> comparador_menor_igual
+
 // Tokens para variáveis e valores
-%token <id> ID
 %token <intValue> NUM
-// Tokens para outros elementos da linguagem
-%token PRINT INT 
-%token ASSIGN SEMICOLON LPAREN RPAREN
-%token PLUS MINUS TIMES DIVIDE
-%token FLOAT CHAR RETURN WHILE FOR
-%token BREAK CONTINUE TRUE FALSE NONE
-%token NOT AND OR IS LAMBDA
-%token DEL GLOBAL NONLOCAL ASSERT
-%token RAISE TRY EXCEPT FINALLY WITH
-%token YIELD DEF CLASS
-%token ASYNC AWAIT MATCH CASE TYPE
-%token LBRACE RBRACE  // Tokens para chaves
+%token <id> ID
+%token caracter_abreParentese
+%token caracter_fechaParentese
+%token caracter_doispontos
+%token <str> FRASE
+
+// Tokens para caracteres especiais
+%token caracter_pontoEVirgula
+%token caracter_abreChave
+%token caracter_fechaChave
 
 // Associação de tipos para as regras gramaticais
+%type <str> expressao
+%type <str> comparador
+%type <str> comparacao
+%type <str> stmt statement print condicional loop_while loop_for
 %type <ast> expr          // Expressões retornam um nó AST
 %type <ast> stmt          // Comandos retornam um nó AST
 %type <ast> stmt_list     // Lista de comandos retorna um nó AST
@@ -64,13 +87,13 @@ int indent_level = 0;                // Nível de indentação atual para códig
 // Definição de precedência e associatividade
 %left OR
 %left AND
-%nonassoc EQ NEQ GE LE GT LT // Operadores de comparação não são associativos
-%left PLUS MINUS      // + e - têm mesma precedência, associativos à esquerda
-%left TIMES DIVIDE    // * e / têm precedência maior que + e -, associativos à esquerda
+%nonassoc comparador_igual comparador_diferente comparador_maior_que comparador_menor_que comparador_maior_igual comparador_menor_igual // Operadores de comparação não são associativos
+%left operador_mais operador_menos      // + e - têm mesma precedência, associativos à esquerda
+%left operador_multiplicacao operador_divisao    // * e / têm precedência maior que + e -, associativos à esquerda
 
 // Resolução do conflito do dangling else
 %nonassoc LOWER_THAN_ELSE  // Precedência mais baixa para if sem else
-%nonassoc ELSE             // Precedência mais alta para else
+%nonassoc comando_else             // Precedência mais alta para else
 
 // Definição do símbolo inicial da gramática
 %start program
@@ -125,20 +148,20 @@ stmt_list:
 
 // Tipos de declarações suportadas
 stmt:
-    decl SEMICOLON     { $$ = $1; }
-    | assign SEMICOLON { $$ = $1; }
-    | print SEMICOLON  { $$ = $1; }
+    decl caracter_pontoEVirgula     { $$ = $1; }
+    | assign caracter_pontoEVirgula { $$ = $1; }
+    | print caracter_pontoEVirgula  { $$ = $1; }
     | if_stmt          { $$ = $1; }
     ;
 
 // Bloco de código (múltiplas declarações)
 block:
-    COLON stmt
+    caracter_doispontos stmt
     {
         // Cria um bloco com um único comando
         $$ = criarNoBloco($2);
     }
-    | COLON LBRACE stmt_list RBRACE
+    | caracter_doispontos caracter_abreChave stmt_list caracter_fechaChave
     {
         // Cria um bloco com múltiplos comandos
         $$ = criarNoBloco($3);
@@ -235,7 +258,7 @@ assign:
 
 // Comando print
 print:
-    PRINT LPAREN expr RPAREN
+    comando_print caracter_abreParentese expr caracter_fechaParentese
     {
         // Cria nó de impressão na AST
         $$ = criarNoPrint($3);
@@ -245,15 +268,14 @@ print:
         imprimirAST($3);  // Imprime a expressão em notação normal
         printf(");\n");
     }
-    | PRINT LPAREN error RPAREN 
+    | comando_print caracter_abreParentese error caracter_fechaParentese 
     {
-        // Tratamento de erro sintático no print
         fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Expressão inválida no print. Comando print deve receber uma expressão válida\n", linha_atual);
         yyerrok;    // Indica ao Bison que o erro foi recuperado
         yyclearin;  // Limpa token de erro no buffer
         $$ = NULL;  // Não há nó AST para retornar
     }
-    | PRINT error
+    | comando_print error
     {
         // Tratamento de erro sintático no print (formato)
         fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Comando print mal formatado. Sintaxe correta: print(expressão);\n", linha_atual);
@@ -280,7 +302,7 @@ if_cond:
 
 // Comando condicional if
 if_stmt:
-    IF if_cond block %prec LOWER_THAN_ELSE
+    comando_if if_cond block %prec LOWER_THAN_ELSE
     {
         // Cria nó if na AST
         $$ = criarNoIf($2, $3);
@@ -292,7 +314,7 @@ if_stmt:
         imprimirAST($3);  // Imprime o bloco
         printf("    }\n");
     }
-    | IF if_cond block ELSE block
+    | comando_if if_cond block comando_else block
     {
         // Cria nó if-else na AST
         $$ = criarNoIfElse($2, $3, $5);
@@ -306,7 +328,7 @@ if_stmt:
         imprimirAST($5);  // Imprime o bloco else
         printf("    }\n");
     }
-    | IF error 
+    | comando_if error 
     {
         // Tratamento de erro sintático no formato do if
         fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Estrutura if mal formatada. Sintaxe correta: if (condição) : comando;\n", linha_atual);
@@ -318,7 +340,7 @@ if_stmt:
 
 // Condição para comando if
 cond:
-    expr comp expr
+    expr comparador expr
     {
         // Determina o tipo de comparação
         TipoComparacao tipo_comp;
@@ -343,12 +365,12 @@ cond:
 
 // Operadores de comparação
 comp:
-    GT { $$ = strdup(">"); }   // Maior que
-    | LT { $$ = strdup("<"); } // Menor que
-    | GE { $$ = strdup(">="); } // Maior ou igual a
-    | LE { $$ = strdup("<="); } // Menor ou igual a
-    | EQ { $$ = strdup("=="); } // Igual a
-    | NEQ { $$ = strdup("!="); } // Diferente de
+    comparador_maior_que { $$ = strdup(">"); }
+    | comparador_menor_que { $$ = strdup("<"); }
+    | comparador_maior_igual { $$ = strdup(">="); }
+    | comparador_menor_igual { $$ = strdup("<="); }
+    | comparador_igual { $$ = strdup("=="); }
+    | comparador_diferente { $$ = strdup("!="); }
     ;
 
 // Regras para expressões
@@ -378,12 +400,11 @@ expr:
         $$ = criarNoId($1);  // Cria nó para variável
         free($1);           // Libera memória do identificador
     }
-    | LPAREN expr RPAREN { $$ = $2; }  // Expressão entre parênteses
-    | expr PLUS expr { $$ = criarNoOp('+', $1, $3); }  // Adição
-    | expr MINUS expr { $$ = criarNoOp('-', $1, $3); }  // Subtração
-    | expr TIMES expr { $$ = criarNoOp('*', $1, $3); }  // Multiplicação
-    | expr DIVIDE expr {
-        // Verifica divisão por zero se o divisor for uma constante
+    | caracter_abreParentese expr caracter_fechaParentese { $$ = $2; }
+    | expr operador_mais expr { $$ = criarNoOp('+', $1, $3); }
+    | expr operador_menos expr { $$ = criarNoOp('-', $1, $3); }
+    | expr operador_multiplicacao expr { $$ = criarNoOp('*', $1, $3); }
+    | expr operador_divisao expr {
         if ($3->tipo == AST_NUM && $3->valor == 0) {
             fprintf(stderr, "[ERRO ARITMÉTICO] Linha %d: Divisão por zero detectada em tempo de compilação\n", linha_atual);
             // CORREÇÃO: Usar YYABORT em vez de YYERROR para garantir que o parsing seja completamente interrompido
@@ -428,14 +449,11 @@ void yyerror(const char *s) {
     fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: ", linha_atual);
     
     switch(yychar) {
-        case INT:
-            if (yylval.id == NULL)
-                fprintf(stderr, "Declaração 'int' deve ser seguida de um identificador válido\n");
-            else
-                fprintf(stderr, "Erro na declaração de variável do tipo 'int'\n");
+        case comando_print:
+            fprintf(stderr, "Comando print mal formatado. Sintaxe correta: print(expressão)\n");
             break;
             
-        case ASSIGN:
+        case atribuicao_igual:
             fprintf(stderr, "Atribuição inválida. Formato correto: identificador = expressão\n");
             break;
             
@@ -447,55 +465,51 @@ void yyerror(const char *s) {
             fprintf(stderr, "Uso incorreto do número '%d'. Os números devem ser usados em expressões ou atribuições\n", yylval.intValue);
             break;
             
-        case PRINT:
-            fprintf(stderr, "Comando print mal formatado. Sintaxe correta: print(expressão)\n");
-            break;
-            
-        case IF:
+        case comando_if:
             fprintf(stderr, "Estrutura if mal formatada. Sintaxe correta: if (condição) : comando\n");
             break;
             
-        case ELSE:
+        case comando_else:
             fprintf(stderr, "Erro no comando 'else': deve ser precedido por um 'if' e seguido por um bloco de código\n");
             break;
             
-        case COLON:
+        case caracter_doispontos:
             fprintf(stderr, "Dois pontos ':' usado incorretamente. O ':' deve seguir uma condição ou preceder um bloco\n");
             break;
             
-        case LPAREN:
+        case caracter_abreParentese:
             fprintf(stderr, "Parêntese de abertura '(' sem o correspondente parêntese de fechamento ')'\n");
             break;
             
-        case RPAREN:
+        case caracter_fechaParentese:
             fprintf(stderr, "Parêntese de fechamento ')' sem o correspondente parêntese de abertura '('\n");
             break;
             
-        case SEMICOLON:
+        case caracter_pontoEVirgula:
             fprintf(stderr, "Ponto e vírgula ';' usado incorretamente ou desnecessário\n");
             break;
             
-        case PLUS:
-        case MINUS:
-        case TIMES:
-        case DIVIDE:
+        case operador_mais:
+        case operador_menos:
+        case operador_multiplicacao:
+        case operador_divisao:
             fprintf(stderr, "Operador aritmético usado incorretamente. Deve estar entre duas expressões válidas\n");
             break;
             
-        case EQ:
-        case NEQ:
-        case GT:
-        case LT:
-        case GE:
-        case LE:
+        case comparador_igual:
+        case comparador_diferente:
+        case comparador_maior_que:
+        case comparador_menor_que:
+        case comparador_maior_igual:
+        case comparador_menor_igual:
             fprintf(stderr, "Operador de comparação usado incorretamente. Deve estar entre duas expressões válidas\n");
             break;
             
-        case LBRACE:
+        case caracter_abreChave:
             fprintf(stderr, "Chave de abertura '{' sem a correspondente chave de fechamento '}'\n");
             break;
             
-        case RBRACE:
+        case caracter_fechaChave:
             fprintf(stderr, "Chave de fechamento '}' sem a correspondente chave de abertura '{'\n");
             break;
             
