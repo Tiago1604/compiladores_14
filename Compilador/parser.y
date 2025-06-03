@@ -44,6 +44,11 @@ int indent_level = 0;                // Nível de indentação atual para códig
 %token comando_for
 %token comando_in
 %token comando_range
+%token comando_break
+%token comando_continue
+%token comando_def
+%token comando_return
+%token comando_class
 
 // Tokens para comparadores
 %token <str> comparador_igual
@@ -56,6 +61,9 @@ int indent_level = 0;                // Nível de indentação atual para códig
 // Tokens para variáveis e valores
 %token <intValue> NUM
 %token <id> ID
+%token tipo_int
+%token tipo_float
+%token tipo_char
 %token caracter_abreParentese
 %token caracter_fechaParentese
 %token caracter_doispontos
@@ -66,11 +74,18 @@ int indent_level = 0;                // Nível de indentação atual para códig
 %token caracter_abreChave
 %token caracter_fechaChave
 
+// Tokens para valores booleanos e nulos
+%token valor_true
+%token valor_false
+%token valor_none
+
+// Tokens para operadores lógicos
+%token operador_not
+%token operador_and
+%token operador_or
+%token operador_is
+
 // Associação de tipos para as regras gramaticais
-%type <str> expressao
-%type <str> comparador
-%type <str> comparacao
-%type <str> stmt statement print condicional loop_while loop_for
 %type <ast> expr          // Expressões retornam um nó AST
 %type <ast> stmt          // Comandos retornam um nó AST
 %type <ast> stmt_list     // Lista de comandos retorna um nó AST
@@ -170,7 +185,7 @@ block:
 
 // Declaração de variável
 decl:
-    INT ID
+    tipo_int ID
     {
         // Verifica se a variável já foi declarada
         if (buscarSimbolo($2)) {
@@ -193,7 +208,7 @@ decl:
 
 // Atribuição de valor
 assign:
-    ID ASSIGN expr
+    ID atribuicao_igual expr
     {
         Simbolo *s = buscarSimbolo($1);
         if (!s) {
@@ -235,7 +250,7 @@ assign:
         
         free($1);  // Libera apenas o ID, a AST continua na memória
     }
-    | ID ASSIGN error
+    | ID atribuicao_igual error
     {
         // Tratamento de erro sintático em atribuição
         fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Expressão inválida na atribuição para a variável '%s'. Deve ser uma expressão válida\n", 
@@ -245,7 +260,7 @@ assign:
         free($1);   // Libera memória do identificador
         $$ = NULL;  // Não há nó AST para retornar
     }
-    | error ASSIGN expr 
+    | error atribuicao_igual expr 
     {
         // Tratamento de erro sintático em atribuição (lado esquerdo inválido)
         fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Identificador inválido no lado esquerdo da atribuição\n", linha_atual);
@@ -287,11 +302,11 @@ print:
 
 // Nova regra auxiliar para condição do if para reduzir ambiguidade
 if_cond:
-    LPAREN cond RPAREN
+    caracter_abreParentese cond caracter_fechaParentese
     {
         $$ = $2;
     }
-    | LPAREN error RPAREN
+    | caracter_abreParentese error caracter_fechaParentese
     {
         fprintf(stderr, "[ERRO SINTÁTICO] Linha %d: Condição inválida no if. Deve ser uma expressão booleana válida ou comparação\n", linha_atual);
         yyerrok;
@@ -340,7 +355,7 @@ if_stmt:
 
 // Condição para comando if
 cond:
-    expr comparador expr
+    expr comp expr
     {
         // Determina o tipo de comparação
         TipoComparacao tipo_comp;

@@ -29,25 +29,25 @@ int pending_indents = 0; // Indentações pendentes para processar
 "print"             { return comando_print; }
 "if"                { return comando_if; }
 "else"              { return comando_else; }
-"int"               { return INT; }
-"float"             { return FLOAT; }
-"char"              { return CHAR; }
+"int"               { return tipo_int; }
+"float"             { return tipo_float; }
+"char"              { return tipo_char; }
 "while"             { return comando_while; }
 "for"               { return comando_for; }
 "in"                { return comando_in; }
 "range"             { return comando_range; }
-"break"             { return BREAK; }
-"continue"          { return CONTINUE; }
-"True"              { return TRUE; }
-"False"             { return FALSE; }
-"None"              { return NONE; }
-"not"               { return NOT; }
-"and"               { return AND; }
-"or"                { return OR; }
-"is"                { return IS; }
-"def"               { return DEF; }
-"return"            { return RETURN; }
-"class"             { return CLASS; }
+"break"             { return comando_break; }
+"continue"          { return comando_continue; }
+"True"              { return valor_true; }
+"False"             { return valor_false; }
+"None"              { return valor_none; }
+"not"               { return operador_not; }
+"and"               { return operador_and; }
+"or"                { return operador_or; }
+"is"                { return operador_is; }
+"def"               { return comando_def; }
+"return"            { return comando_return; }
+"class"             { return comando_class; }
 
 "=="                { yylval.str = strdup("=="); return comparador_igual; }
 "!="                { yylval.str = strdup("!="); return comparador_diferente; }
