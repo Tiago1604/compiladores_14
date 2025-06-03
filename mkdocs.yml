@@ -11,11 +11,13 @@ nav:
     - Planejamento das Sprints: planejamento/planejamento_das_sprints.md
   - Decisões Técnicas: decisoes/decisao.md
   - Problemas e Soluções: problemas_e_solucoes/problemas_e_solucoes1.md
+  - Problemas e Soluções 2: problemas_e_solucoes/problemas_e_solucoes2.md
   - Atas de Reunião:
     - Ata 1: atas/ata1.md
     - Ata 2: atas/ata2.md
     - Ata 3: atas/ata3.md
     - Ata 4: atas/ata4.md
+    - Ata 5: atas/ata5.md
   - Sprints:
     - Sprint: sprints/sprint.md
   - Atividades Semanais:
@@ -24,6 +26,7 @@ nav:
     - Semana 3: atividades_semanais/Semana3.md
   - Ponto de Controle:
     - Ponto de Controle 1: ponto_de_controle/ponto_de_controle1.md
+    - Ponto de Controle 2: ponto_de_controle/ponto_de_controle2.md	
 
 theme:
   logo: assets/logo.jpg

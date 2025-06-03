@@ -64,6 +64,23 @@ Essa estrutura foi projetada para organizar o projeto de forma clara, separando 
 
 ## Ajustes e Melhorias
 
+- **AST (Árvore Sintática Abstrata):**
+   - Refatoração das estruturas de dados para facilitar a manipulação e geração de código.
+   - Implementação de novos tipos de nós para suportar mais construções da linguagem Python.
+
+- **Parser:**
+   - Correção de ambiguidades e conflitos de precedência nas regras gramaticais.
+   - Adição de suporte a novas estruturas sintáticas do Python.
+   - Melhoria nas mensagens de erro para facilitar o diagnóstico de problemas.
+
+- **Léxico:**
+   - Expansão do conjunto de tokens reconhecidos, incluindo operadores e palavras-chave adicionais.
+   - Ajuste nas expressões regulares para maior precisão na identificação de identificadores e literais.
+
+- **Tabela de Símbolos:**
+   - Implementação de escopos aninhados para melhor controle de variáveis locais e globais.
+   - Armazenamento de informações adicionais, como tipo e posição, para cada símbolo.
+
 ## Atividades Semanais
 
 A cada semana, novas atividades e exercícios serão postados neste repositório, acompanhados de explicações e instruções para sua realização.

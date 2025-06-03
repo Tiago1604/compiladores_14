@@ -1,4 +1,4 @@
-# Ata da Reunião - Sprint 1  
+# Ata da Reunião - Sprint 3
 
 **Data:** 14/05/2025  
 **Hora Prevista:** 14:00 - 16:00  
