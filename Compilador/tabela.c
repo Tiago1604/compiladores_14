@@ -43,4 +43,4 @@ void imprimirTabela() {
                 s->nome, s->tipo == TIPO_INT ? "int" : "float", s->escopo, s->inicializada);
         }
     }
-} 
+}

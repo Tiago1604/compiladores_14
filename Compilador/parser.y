@@ -113,8 +113,7 @@ expressao
     ;
 
 %%
-
 void yyerror(const char *s) {
     fprintf(stderr, "Erro na linha %d: %s\n", num_linha, s);
     exit(1);
-} 
+}

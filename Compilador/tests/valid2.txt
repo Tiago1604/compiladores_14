@@ -1,0 +1,5 @@
+x = 0
+for i in range(3):
+    x = x + i
+if x > 2:
+    print(x) 
