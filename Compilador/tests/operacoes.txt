@@ -1,0 +1,11 @@
+x = 5
+y = 2
+z = x * y + 3
+w = x / y
+print(z)
+print(w)
+if x == y:
+    igual = 1
+else:
+    igual = 0
+print(igual) 
