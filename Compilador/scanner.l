@@ -1,123 +1,51 @@
 %{
-#include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include "ast.h"
 #include "parser.tab.h"
-#include "tabela.h"
+#define YY_NO_INPUT
+#define YY_NO_UNPUT
 
-// Declaração da nova função de parsing com verificação
-extern int yyparse_and_check();
-extern int linha_atual;  // Linha atual para mensagens de erro
-extern int gerar_bitcode;  // Flag para gerar bitcode
-extern int gerar_c;       // Flag para gerar código C
-
-// Suprime avisos de funções não utilizadas
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
+int num_linha = 1;
 %}
 
 %%
 
-[ \t]              ; // Ignora espaços e tabs
-\n                 { linha_atual++; } // Incrementa contador de linhas
+"if"            { return IF; }
+"else"          { return ELSE; }
+"for"           { return FOR; }
+"in"            { return IN; }
+"range"         { return RANGE; }
+"print"         { return PRINT; }
 
-"#bitcode"         { gerar_bitcode = 1; gerar_c = 0; }
-"#c"               { gerar_bitcode = 0; gerar_c = 1; }
+[0-9]+           { yylval.inteiro = atoi(yytext); return INTEIRO; }
+[0-9]+\.[0-9]+  { yylval.flutuante = atof(yytext); return FLUTUANTE; }
+[a-zA-Z_][a-zA-Z0-9_]* { yylval.str = strdup(yytext); return IDENTIFICADOR; }
 
-"print"            { return PRINT; }
-"if"               { return IF; }
-"else"             { return ELSE; }
-"int"              { return INT; }
-"float"            { return FLOAT; }
-"char"             { return CHAR; }
-"return"           { return RETURN; }
-"while"            { return WHILE; }
-"for"              { return FOR; }
-"break"            { return BREAK; }
-"continue"         { return CONTINUE; }
-"True"             { return TRUE; }
-"False"            { return FALSE; }
-"None"             { return NONE; }
-"not"              { return NOT; }
-"and"              { return AND; }
-"or"               { return OR; }
-"is"               { return IS; }
-"lambda"           { return LAMBDA; }
-"del"              { return DEL; }
-"global"           { return GLOBAL; }
-"nonlocal"         { return NONLOCAL; }
-"assert"           { return ASSERT; }
-"raise"            { return RAISE; }
-"try"              { return TRY; }
-"except"           { return EXCEPT; }
-"finally"          { return FINALLY; }
-"with"             { return WITH; }
-"yield"            { return YIELD; }
-"def"              { return DEF; }
-"class"            { return CLASS; }
-"async"            { return ASYNC; }
-"await"            { return AWAIT; }
-"match"            { return MATCH; }
-"case"             { return CASE; }
-"type"             { return TYPE; }
+"+"                    { return SOMA; }
+"-"                    { return SUBTRACAO; }
+"*"                    { return MULTIPLICACAO; }
+"/"                    { return DIVISAO; }
+"="                    { return ATRIBUICAO; }
+">"                    { return MAIOR; }
+"<"                    { return MENOR; }
+">="                   { return MAIOR_IGUAL; }
+"<="                   { return MENOR_IGUAL; }
+"=="                   { return IGUAL; }
+"!="                   { return DIFERENTE; }
 
-"=="               { return EQ; }
-"!="               { return NEQ; }
-">="               { return GE; }
-"<="               { return LE; }
-">"                { return GT; }
-"<"                { return LT; }
-"="                { return ASSIGN; }
-";"                { return SEMICOLON; }
-"("                { return LPAREN; }
-")"                { return RPAREN; }
-"+"                { return PLUS; }
-"-"                { return MINUS; }
-"*"                { return TIMES; }
-"/"                { return DIVIDE; }
-":"                { return COLON; }
-"{"                { return LBRACE; }
-"}"                { return RBRACE; }
+"("                    { return ABRE_PAR; }
+")"                    { return FECHA_PAR; }
+":"                    { return DOIS_PONTOS; }
 
-[0-9]+             { yylval.intValue = atoi(yytext); return NUM; }
-[a-zA-Z_][a-zA-Z0-9_]* { yylval.id = strdup(yytext); return ID; }
-
-.        { fprintf(stderr, "[ERRO LÉXICO] Linha %d: Caractere não reconhecido: '%s'\n", linha_atual, yytext); }
+[ \t]+                 ; /* ignora espaços em branco */
+[\n]                   { num_linha++; }
+#.*                    ; /* ignora comentários */
+.                      { printf("Caractere inválido: %s\n", yytext); }
 
 %%
 
-#pragma GCC diagnostic pop
-
-// Função chamada ao fim da entrada
 int yywrap(void) {
-    return 1;  // Retorna 1 para indicar fim de entrada
-}
-
-// Função principal do programa
-int main(int argc, char **argv) {
-    // Inicializa flags de geração de código
-    gerar_bitcode = 0;
-    gerar_c = 1;
-    
-    // Se receber argumento na linha de comando, usa como arquivo de entrada
-    if (argc > 1) {
-        FILE *f = fopen(argv[1], "r");
-        if (!f) {
-            fprintf(stderr, "Erro ao abrir arquivo: %s\n", argv[1]);
-            return 1;
-        }
-        yyin = f;  // Define entrada para o analisador léxico
-    } else {
-        printf("Compilador iniciado. Digite seu código (Ctrl+D para finalizar):\n");
-    }
-
-    // Usa a nova função que faz parsing e verificação
-    int resultado = yyparse_and_check();
-    
-    // Imprime a tabela de símbolos
-    imprimirTabela();
-    
-    // Libera a memória da tabela
-    liberarTabela();
-    
-    return resultado;
-}
+    return 1;
+} 
