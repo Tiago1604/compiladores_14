@@ -1,0 +1,6 @@
+# Exemplo de função (não suportado ainda, mas para referência)
+def soma(a, b):
+    resultado = a + b
+    return resultado
+x = soma(2, 3)
+print(x) 

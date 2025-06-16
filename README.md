@@ -51,17 +51,17 @@ Essa estrutura foi projetada para organizar o projeto de forma clara, separando 
     flex scanner.l
     ```
     ```
-    gcc -o compilador parser.tab.c lex.yy.c -lfl
+    gcc -o compilador parser.tab.c lex.yy.c ast.c tabela.c -lfl
     ```
 
     ```
-    ./compilador
+    ./compilador arquivo_entrada.txt arquivo_saida.c
     ```
     ou
     ```
-    ./compilador < entrada.txt
+    make
+    ./build/compiler arquivo_entrada.txt arquivo_saida.c
     ```
-
 ## Ajustes e Melhorias
 
 - **AST (Árvore Sintática Abstrata):**

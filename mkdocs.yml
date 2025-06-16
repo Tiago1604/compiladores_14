@@ -22,9 +22,16 @@ nav:
   - Sprints:
       - Sprint: sprints/sprint.md
   - Atividades Semanais:
-      - Semana 1: atividades_semanais/Semana1.md
-      - Semana 2: atividades_semanais/Semana2.md
-      - Semana 3: atividades_semanais/Semana3.md
+    - Semana 1: atividades_semanais/Semana1.md
+    - Semana 2: atividades_semanais/Semana2.md
+    - Semana 3: atividades_semanais/Semana3.md
+    - Semana 4: atividades_semanais/Semana4.md
+    - Semana 5: atividades_semanais/Semana5.md
+    - Semana 6: atividades_semanais/Semana6.md
+    - Semana 7: atividades_semanais/Semana7.md
+    - Semana 8: atividades_semanais/Semana8.md
+    - Semana 9: atividades_semanais/Semana9.md
+    - Semana 10: atividades_semanais/Semana10.md
   - Ponto de Controle:
       - Ponto de Controle 1: ponto_de_controle/ponto_de_controle1.md
       - Ponto de Controle 2: ponto_de_controle/ponto_de_controle2.md
