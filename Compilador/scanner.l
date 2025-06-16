@@ -18,6 +18,7 @@ int num_linha = 1;
 "in"            { return IN; }
 "range"         { return RANGE; }
 "print"         { return PRINT; }
+"def"           { return DEF; }
 
 [0-9]+           { yylval.inteiro = atoi(yytext); return INTEIRO; }
 [0-9]+\.[0-9]+  { yylval.flutuante = atof(yytext); return FLUTUANTE; }
