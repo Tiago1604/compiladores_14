@@ -475,7 +475,7 @@ static const yytype_uint8 yyrline[] =
 {
        0,    47,    47,    51,    52,    56,    57,    58,    59,    60,
       64,    66,    71,    80,    84,    97,   105,   106,   107,   108,
-     109,   110,   111,   112,   113,   114,   115,   116,   117,   125
+     109,   110,   111,   112,   113,   114,   115,   116,   117,   120
 };
 #endif
 
@@ -1548,23 +1548,18 @@ yyreduce:
   case 28:
 #line 117 "parser.y"
     {
-        // Verifica se a variável foi declarada
-        //if (!buscarSimbolo($1, escopo_atual)) {
-          //  fprintf(stderr, "Erro: Variável '%s' não declarada (linha %d)\n", $1, num_linha);
-            //exit(1);
-        //}
         (yyval.arvore) = criar_identifier((yyvsp[(1) - (1)].str));
     ;}
     break;
 
   case 29:
-#line 125 "parser.y"
+#line 120 "parser.y"
     { (yyval.arvore) = (yyvsp[(2) - (3)].arvore); ;}
     break;
 
 
 /* Line 1267 of yacc.c.  */
-#line 1568 "build/parser.tab.c"
+#line 1563 "build/parser.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -1778,7 +1773,7 @@ yyreturn:
 }
 
 
-#line 128 "parser.y"
+#line 123 "parser.y"
 
 void yyerror(const char *s) {
     fprintf(stderr, "Erro na linha %d: %s\n", num_linha, s);
