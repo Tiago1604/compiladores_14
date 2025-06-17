@@ -2,7 +2,5 @@ x = 3
 y = 7
 if x > y:
     maior = x
-else:
-    maior = y
 
 print(maior)

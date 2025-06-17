@@ -8,8 +8,6 @@ int x;
     y = 7;
     if (x > y) {
         maior = x;
-    } else {
-        maior = y;
     }
     printf("%d\n", maior);
     return 0;
