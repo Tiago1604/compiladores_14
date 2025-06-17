@@ -10,7 +10,7 @@ int x;
         maior = x;
     } else {
         maior = y;
-        printf("%d\n", maior);
     }
+    printf("%d\n", maior);
     return 0;
 }

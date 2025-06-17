@@ -41,7 +41,7 @@ int num_linha = 1;
 ":"                    { return DOIS_PONTOS; }
 
 [ \t]+                 ; /* ignora espaços em branco */
-[\n]                   { num_linha++; }
+[\n]                   { num_linha++; return NEWLINE;}
 #.*                    ; /* ignora comentários */
 .                      { printf("Caractere inválido: %s\n", yytext); }
 

@@ -4,4 +4,5 @@ if x > y:
     maior = x
 else:
     maior = y
-print(maior) 
+
+print(maior)
