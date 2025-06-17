@@ -153,7 +153,6 @@ void collect_vars(ASTNode *node, struct VarList **vars) {
             collect_vars(node->right, vars);
             break;
         case NODE_FOR:
-            add_var(vars, node->value.sval, false);
             collect_vars(node->left, vars);
             collect_vars(node->right, vars);
             break;

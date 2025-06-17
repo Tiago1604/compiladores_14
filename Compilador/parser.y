@@ -115,11 +115,6 @@ expressao
     | INTEIRO                      { $$ = criar_number($1); }
     | FLUTUANTE                    { $$ = criar_float($1); }
     | IDENTIFICADOR                {
-        // Verifica se a variável foi declarada
-        if (!buscarSimbolo($1, escopo_atual)) {
-            fprintf(stderr, "Erro: Variável '%s' não declarada (linha %d)\n", $1, num_linha);
-            exit(1);
-        }
         $$ = criar_identifier($1);
     }
     | ABRE_PAR expressao FECHA_PAR { $$ = $2; }
