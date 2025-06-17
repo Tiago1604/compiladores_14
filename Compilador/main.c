@@ -33,12 +33,11 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    // Adiciona os includes necessários no código gerado
-    fprintf(saida, "#include <stdio.h>\n\n");
-
+    
+    printf("[DEBUG] Parser terminou, começando geração de código...\n");
+    
     // Gera o código C a partir da árvore sintática
     gerar_codigo_c(root, saida);
-
     // Fecha os arquivos abertos
     fclose(yyin);
     fclose(saida);

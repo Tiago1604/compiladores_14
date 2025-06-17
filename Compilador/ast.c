@@ -177,15 +177,66 @@ void print_var_decls(struct VarList *vars, FILE *output) {
         cur = cur->next;
     }
 }
+// Função para gerar código C a partir da AST
+// Esta função percorre a AST e gera o código C correspondente
+void gerar_funcoes(ASTNode *node, FILE *output) {
+    if (!node) return;
 
-// Função principal de geração de código C
+    if (node->type == NODE_STMT_LIST) {
+        gerar_funcoes(node->left, output);
+        gerar_funcoes(node->right, output);
+    } else if (node->type == NODE_FUNCTION_DEF) {
+        // Cabeçalho da função
+        fprintf(output, "void %s() {\n", node->value.sval);
+
+        // 1) Coletar e declarar variáveis locais, com 1 nível de indentação (4 espaços)
+        struct VarList *vars = NULL;
+        collect_vars(node->right, &vars);
+        for (struct VarList *cur = vars; cur; cur = cur->next) {
+            fprintf(output, "    %s %s;\n",
+                    cur->is_float ? "float" : "int",
+                    cur->name);
+        }
+
+        // 2) Gerar o corpo da função, também com indentação de 1 nível
+        gerar_codigo_c_interno(node->right, output, 1);
+
+        // 3) Liberar a lista de variáveis
+        while (vars) {
+            struct VarList *tmp = vars;
+            vars = vars->next;
+            free(tmp);
+        }
+
+        // Fecha a função
+        fprintf(output, "}\n\n");
+    }
+}
+
+
+
+// Função principal para gerar código C a partir da AST
+
 void gerar_codigo_c(ASTNode *node, FILE *output) {
+    static bool header_printed = false;
     struct VarList *vars = NULL;
+
+    // imprime o include apenas na primeira vez
+    if (!header_printed) {
+        fprintf(output, "#include <stdio.h>\n\n");
+        header_printed = true;
+    }
+
+    // Primeiro: gerar as funções fora do main
+    gerar_funcoes(node, output);
+
+    // Agora o main
     collect_vars(node, &vars);
     fprintf(output, "int main() {\n");
     print_var_decls(vars, output);
     gerar_codigo_c_interno(node, output, 1);
     fprintf(output, "    return 0;\n}\n");
+
     while (vars) {
         struct VarList *tmp = vars;
         vars = vars->next;
@@ -193,17 +244,25 @@ void gerar_codigo_c(ASTNode *node, FILE *output) {
     }
 }
 
+
 // Função recursiva auxiliar para geração de código C com indentação
 void gerar_codigo_c_interno(ASTNode *node, FILE *output, int indent) {
     if (!node) return;
+
     char ind[32];
     memset(ind, ' ', indent * 4);
     ind[indent * 4] = '\0';
+
     switch (node->type) {
+        case NODE_FUNCTION_DEF:
+            // Ignorar: as funções já foram geradas antes do main
+            break;
+
         case NODE_STMT_LIST:
             gerar_codigo_c_interno(node->left, output, indent);
             if (node->right) gerar_codigo_c_interno(node->right, output, indent);
             break;
+
         case NODE_IF:
             fprintf(output, "%sif ", ind);
             gerar_codigo_c_interno(node->left, output, 0);
@@ -217,6 +276,7 @@ void gerar_codigo_c_interno(ASTNode *node, FILE *output, int indent) {
             }
             fprintf(output, "\n");
             break;
+
         case NODE_FOR:
             fprintf(output, "%sfor (int %s = 0; %s < ", ind, node->value.sval, node->value.sval);
             gerar_codigo_c_interno(node->left, output, 0);
@@ -224,14 +284,8 @@ void gerar_codigo_c_interno(ASTNode *node, FILE *output, int indent) {
             gerar_codigo_c_interno(node->right, output, indent + 1);
             fprintf(output, "%s}\n", ind);
             break;
-        case NODE_FUNCTION_DEF:
-            fprintf(output, "void %s(){\n",node->value.sval);
-            gerar_codigo_c_interno(node->left, output, 0);
-            gerar_codigo_c_interno(node->right, output, indent + 1);
-            fprintf(output, "%s}\n", ind);
-            break;
+
         case NODE_PRINT: {
-            // Detecta o tipo do nó a ser impresso
             const char *fmt = "%d";
             if (node->left && node->left->type == NODE_FLOAT) {
                 fmt = "%f";
@@ -241,11 +295,13 @@ void gerar_codigo_c_interno(ASTNode *node, FILE *output, int indent) {
             fprintf(output, ");\n");
             break;
         }
+
         case NODE_ASSIGNMENT:
             fprintf(output, "%s%s = ", ind, node->value.sval);
             gerar_codigo_c_interno(node->right, output, 0);
             fprintf(output, ";\n");
             break;
+
         case NODE_COMPARISON:
         case NODE_ARITHMETIC:
             fprintf(output, "(");
@@ -254,19 +310,24 @@ void gerar_codigo_c_interno(ASTNode *node, FILE *output, int indent) {
             gerar_codigo_c_interno(node->right, output, 0);
             fprintf(output, ")");
             break;
+
         case NODE_NUMBER:
             fprintf(output, "%d", node->value.ival);
             break;
+
         case NODE_FLOAT:
             fprintf(output, "%f", node->value.fval);
             break;
+
         case NODE_IDENTIFIER:
             fprintf(output, "%s", node->value.sval);
             break;
+
         default:
             break;
     }
 }
+
 
 // Impressão textual da AST para debug
 void imprimirAST(ASTNode *no, int nivel) {
