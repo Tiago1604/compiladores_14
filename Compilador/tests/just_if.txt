@@ -1,0 +1,6 @@
+x = 3
+y = 7
+if x > y:
+    maior = x
+
+print(maior)
