@@ -224,6 +224,12 @@ void gerar_codigo_c_interno(ASTNode *node, FILE *output, int indent) {
             gerar_codigo_c_interno(node->right, output, indent + 1);
             fprintf(output, "%s}\n", ind);
             break;
+        case NODE_FUNCTION_DEF:
+            fprintf(output, "void %s(){\n",node->value.sval);
+            gerar_codigo_c_interno(node->left, output, 0);
+            gerar_codigo_c_interno(node->right, output, indent + 1);
+            fprintf(output, "%s}\n", ind);
+            break;
         case NODE_PRINT: {
             // Detecta o tipo do nó a ser impresso
             const char *fmt = "%d";
@@ -288,6 +294,11 @@ void imprimirAST(ASTNode *no, int nivel) {
             printf("FOR var=%s\n", no->value.sval);
             imprimirAST(no->left, nivel + 1);    // range
             imprimirAST(no->right, nivel + 1);   // body
+            break;
+        case NODE_FUNCTION_DEF:
+            printf("DEF %s\n", no->value.sval);
+            imprimirAST(no->left, nivel + 1);    // range
+            imprimirAST(no->right, nivel + 1);
             break;
         case NODE_PRINT:
             printf("PRINT\n");
