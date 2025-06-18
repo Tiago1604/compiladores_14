@@ -1,10 +1,10 @@
-# Plano de Sprints para Compilador Python-Lua
+# Plano de Sprints para Compilador Python-C
 ## Informações Gerais
 
 **Disciplina:** FGA0003 - Compiladores 1  
 **Semestre:** 2025/1  
 **Professor:** Dr. Sergio Antônio Andrade de Freitas  
-**Projeto:** Compilador de Python para Lua  
+**Projeto:** Compilador de Python para C  
 **Entregas Principais:**
 - Ponto de Controle P1: 30/04/2025
 - Ponto de Controle P2: 04/06/2025
@@ -23,10 +23,10 @@
 | 1 | 24/03 - 09/04 | Preparação e Análise Léxica | Analisador Léxico Funcional | ✅ Finalizada |
 | 2 | 10/04 - 28/04 | Análise Sintática | Parser e P1 | ✅ Finalizada |
 | 3 | 01/05 - 14/05 | Representação Interna | AST e Tabela de Símbolos | 🔄 Iniciada |
-| 4 | 15/05 - 02/06 | Análise Semântica | Verificador Semântico e P2 | 🟡 Não iniciado |
-| 5 | 05/06 - 18/06 | Geração de Código | Gerador de Código Lua | 🟡 Não iniciado |
-| 6 | 19/06 - 27/06 | Refinamento e Testes | Compilador Completo | 🟡 Não iniciado |
-| 7 | 28/06 - 09/07 | Apresentação e Fechamento | Documentação Final e Entrevista | 🟡 Não iniciado |
+| 4 | 15/05 - 02/06 | Análise Semântica | Verificador Semântico e P2 | 🔄 Iniciada |
+| 5 | 05/06 - 18/06 | Geração de Código | Gerador de Código C | 🔄 Iniciada |
+| 6 | 19/06 - 27/06 | Refinamento e Testes | Compilador Completo | 🔄 Iniciada |
+| 7 | 28/06 - 09/07 | Apresentação e Fechamento | Documentação Final e Entrevista | 🔄 Iniciada |
 
 ## Detalhamento das Sprints
 
