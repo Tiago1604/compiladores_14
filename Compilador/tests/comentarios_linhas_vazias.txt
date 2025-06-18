@@ -1,0 +1,7 @@
+# Este é um comentário
+
+x = 1
+# Outro comentário
+y = 2
+
+print(x + y) 
