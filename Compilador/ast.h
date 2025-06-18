@@ -70,6 +70,7 @@ ASTNode *criar_identifier(char *name);
 void gerar_codigo_c(ASTNode *no, FILE *saida);
 void gerar_codigo_c_interno(ASTNode *no, FILE *saida, int identacao);
 
+
 // Função para imprimir a AST
 void imprimirAST(ASTNode *no, int nivel);
 
