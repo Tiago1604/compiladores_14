@@ -1,7 +1,7 @@
 #ifndef TABELA_H
 #define TABELA_H
 
-typedef enum { TIPO_INT, TIPO_FLOAT } Tipo;
+typedef enum { TIPO_INT, TIPO_FLOAT, TIPO_FUNC} Tipo;
 
 typedef struct simbolo {
     char nome[64];
@@ -9,6 +9,7 @@ typedef struct simbolo {
     int escopo;
     int inicializada;
     struct simbolo *proximo;
+    
 } Simbolo;
 
 void inserirSimbolo(char *nome, Tipo tipo, int escopo);

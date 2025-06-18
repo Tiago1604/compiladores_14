@@ -153,7 +153,6 @@ void coletar_vars(No *no, struct ListaVar **vars) {
             coletar_vars(no->direita, vars);
             break;
         case NO_FOR:
-            adicionar_var(vars, no->valor.sval, false);
             coletar_vars(no->esquerda, vars);
             coletar_vars(no->direita, vars);
             break;

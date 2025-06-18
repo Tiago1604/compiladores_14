@@ -25,10 +25,13 @@ int escopo_atual = 0;
 %token SOMA SUBTRACAO MULTIPLICACAO DIVISAO
 %token ATRIBUICAO IGUAL DIFERENTE MENOR MAIOR MENOR_IGUAL MAIOR_IGUAL
 %token ABRE_PAR FECHA_PAR DOIS_PONTOS
+%token DEF
+
 
 %type <arvore> programa lista_comandos comando
 %type <arvore> comando_if comando_for
 %type <arvore> expressao comando_print atribuicao
+%type <arvore> comando_def
 
 %left IGUAL DIFERENTE MENOR MAIOR MENOR_IGUAL MAIOR_IGUAL
 %left SOMA SUBTRACAO
@@ -53,6 +56,7 @@ comando
     | comando_for
     | comando_print
     | atribuicao
+    | comando_def
     ;
 
 comando_if
@@ -85,6 +89,14 @@ atribuicao
             inserirSimbolo($1, tipo, escopo_atual);
         }
         $$ = criar_atribuicao($1, $3);
+    }
+    ;
+
+comando_def
+    : DEF IDENTIFICADOR ABRE_PAR FECHA_PAR DOIS_PONTOS lista_comandos
+    {
+        inserirSimbolo($2, TIPO_FUNC, escopo_atual);  // Exemplo de controle de tabela de símbolos
+        $$ = criar_function_def($2, NULL, $6);  // Função na AST
     }
     ;
 
