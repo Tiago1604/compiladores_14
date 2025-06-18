@@ -96,7 +96,7 @@ comando_def
     : DEF IDENTIFICADOR ABRE_PAR FECHA_PAR DOIS_PONTOS lista_comandos
     {
         inserirSimbolo($2, TIPO_FUNC, escopo_atual);  // Exemplo de controle de tabela de símbolos
-        $$ = criar_function_def($2, NULL, $6);  // Função na AST
+        $$ = criar_funcao($2, NULL, $6);  // Função na AST
     }
     ;
 
