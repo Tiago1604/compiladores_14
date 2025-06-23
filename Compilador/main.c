@@ -5,6 +5,7 @@
 // Declaração de variáveis externas
 extern FILE *yyin;
 extern int yyparse(void);
+extern int tem_erro(); // Nova função para verificar se houve erros
 No *raiz;
 
 int main(int argc, char **argv) {
@@ -23,6 +24,13 @@ int main(int argc, char **argv) {
 
     // Executa o parser (análise sintática)
     yyparse();
+
+    // Se houver erros, não gera o arquivo de saída
+    if (tem_erro()) {
+        fprintf(stderr, "\nErros encontrados. Arquivo de saída não foi gerado.\n");
+        fclose(yyin);
+        return 1;
+    }
 
     //Abre o arquivo de saída para escrita do código C gerado
     FILE *saida = fopen(argv[2], "w");

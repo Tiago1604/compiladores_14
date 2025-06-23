@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "ast.h"
 #include "tabela.h"
 
@@ -9,6 +10,30 @@ extern int num_linha;
 void yyerror(const char *s);
 // Variável global para escopo (pode ser expandida depois)
 int escopo_atual = 0;
+
+// Estrutura para gerenciar erros
+typedef struct {
+    int tem_erro;
+    int num_erros;
+    char mensagens[100][256];  // Array para armazenar até 100 mensagens de erro
+} GerenciadorErros;
+
+GerenciadorErros gerenciador_erros = {0, 0};
+
+// Função para verificar se houve erros
+int tem_erro() {
+    return gerenciador_erros.tem_erro;
+}
+
+// Função para adicionar erro
+void adicionar_erro(const char *mensagem) {
+    if (gerenciador_erros.num_erros < 100) {
+        snprintf(gerenciador_erros.mensagens[gerenciador_erros.num_erros], 
+                256, "Linha %d: %s", num_linha, mensagem);
+        gerenciador_erros.num_erros++;
+        gerenciador_erros.tem_erro = 1;
+    }
+}
 %}
 
 %union {
@@ -27,7 +52,6 @@ int escopo_atual = 0;
 %token ABRE_PAR FECHA_PAR DOIS_PONTOS
 %token DEF
 
-
 %type <arvore> programa lista_comandos comando
 %type <arvore> comando_if comando_for
 %type <arvore> expressao comando_print atribuicao
@@ -37,33 +61,114 @@ int escopo_atual = 0;
 %left SOMA SUBTRACAO
 %left MULTIPLICACAO DIVISAO
 
+// Habilita o modo de recuperação de erros
+%error-verbose
+
 %%
 
 /*
  * Regras de produção da gramática
  */
 programa
-    : lista_comandos { raiz = $1; printf("Tabela de Simbolos:\n"); imprimirTabela(); printf("\nAST:\n"); imprimirAST(raiz, 0); }
+    : lista_comandos { 
+        if ($1 == NULL) {
+            adicionar_erro("Erro de sintaxe no programa");
+            raiz = NULL;
+        } else {
+            raiz = $1;
+        }
+        
+        // Imprime erros se houver
+        if (gerenciador_erros.tem_erro) {
+            printf("\nErros encontrados:\n");
+            for (int i = 0; i < gerenciador_erros.num_erros; i++) {
+                printf("%s\n", gerenciador_erros.mensagens[i]);
+            }
+            printf("\n");
+        }
+        
+        printf("Tabela de Simbolos:\n"); 
+        imprimirTabela(); 
+        if (raiz != NULL) {
+            printf("\nAST:\n"); 
+            imprimirAST(raiz, 0);
+        }
+    }
+    | error { 
+        adicionar_erro("Erro de sintaxe no programa");
+        raiz = NULL; 
+    }
     ;
 
 lista_comandos
-    : comando { $$ = criar_no(NO_LISTA_COMANDOS, $1, NULL); }
-    | lista_comandos comando { $$ = criar_no(NO_LISTA_COMANDOS, $1, $2); }
+    : comando { 
+        if ($1 == NULL) {
+            $$ = NULL;
+        } else {
+            $$ = criar_no(NO_LISTA_COMANDOS, $1, NULL);
+        }
+    }
+    | lista_comandos comando { 
+        if ($1 == NULL || $2 == NULL) {
+            $$ = NULL;
+        } else {
+            $$ = criar_no(NO_LISTA_COMANDOS, $1, $2);
+        }
+    }
+    | error { 
+        adicionar_erro("Erro de sintaxe na lista de comandos");
+        $$ = NULL;
+        yyerrok;
+    }
     ;
 
 comando
-    : comando_if
+    : comando_if {
+        if ($1 == NULL) {
+            $$ = NULL;
+            YYERROR;
+        } else {
+            $$ = $1;
+        }
+    }
     | comando_for
     | comando_print
     | atribuicao
     | comando_def
+    | error { 
+        adicionar_erro("Erro de sintaxe no comando");
+        $$ = NULL;
+        yyerrok;
+    }
     ;
 
 comando_if
     : IF expressao DOIS_PONTOS lista_comandos
-        { $$ = criar_if($2, $4, NULL); }
+        { 
+            if ($2 == NULL || $4 == NULL) {
+                $$ = NULL;
+            } else {
+                $$ = criar_if($2, $4, NULL);
+            }
+        }
     | IF expressao DOIS_PONTOS lista_comandos ELSE DOIS_PONTOS lista_comandos
-        { $$ = criar_if($2, $4, $7); }
+        { 
+            if ($2 == NULL || $4 == NULL || $7 == NULL) {
+                $$ = NULL;
+            } else {
+                $$ = criar_if($2, $4, $7);
+            }
+        }
+    | IF expressao DOIS_PONTOS lista_comandos ELSE error {
+            adicionar_erro("Erro de sintaxe: faltando ':' após 'else'");
+            $$ = NULL;
+            yyerrok;
+        }
+    | IF error {
+            adicionar_erro("Erro na expressão de condição do if");
+            $$ = NULL;
+            yyerrok;
+        }
     ;
 
 comando_for
@@ -93,10 +198,12 @@ atribuicao
     ;
 
 comando_def
-    : DEF IDENTIFICADOR ABRE_PAR FECHA_PAR DOIS_PONTOS lista_comandos
+    : DEF IDENTIFICADOR ABRE_PAR FECHA_PAR DOIS_PONTOS {
+        // Declarar a função antes de processar seu corpo
+        inserirSimbolo($2, TIPO_FUNC, escopo_atual);
+    } lista_comandos
     {
-        inserirSimbolo($2, TIPO_FUNC, escopo_atual);  // Exemplo de controle de tabela de símbolos
-        $$ = criar_funcao($2, NULL, $6);  // Função na AST
+        $$ = criar_funcao($2, NULL, $7);
     }
     ;
 
@@ -105,19 +212,128 @@ expressao
     | expressao SUBTRACAO expressao { $$ = criar_aritmetico(OP_MENOS, $1, $3); }
     | expressao MULTIPLICACAO expressao { $$ = criar_aritmetico(OP_VEZES, $1, $3); }
     | expressao DIVISAO expressao   { $$ = criar_aritmetico(OP_DIVIDE, $1, $3); }
-    | expressao IGUAL expressao     { $$ = criar_comparacao(OP_IGUAL, $1, $3); }
-    | expressao DIFERENTE expressao { $$ = criar_comparacao(OP_DIFERENTE, $1, $3); }
-    | expressao MENOR expressao     { $$ = criar_comparacao(OP_MENOR, $1, $3); }
-    | expressao MAIOR expressao     { $$ = criar_comparacao(OP_MAIOR, $1, $3); }
-    | expressao MENOR_IGUAL expressao { $$ = criar_comparacao(OP_MENOR_IGUAL, $1, $3); }
-    | expressao MAIOR_IGUAL expressao { $$ = criar_comparacao(OP_MAIOR_IGUAL, $1, $3); }
+    | expressao IGUAL expressao     { 
+        // Verifica se algum dos operandos é uma função
+        Simbolo *s1 = NULL;
+        Simbolo *s2 = NULL;
+        if ($1->tipo == NO_IDENTIFICADOR) {
+            s1 = buscarSimbolo($1->valor.sval, escopo_atual);
+        }
+        if ($3->tipo == NO_IDENTIFICADOR) {
+            s2 = buscarSimbolo($3->valor.sval, escopo_atual);
+        }
+        
+        if ((s1 && s1->tipo == TIPO_FUNC) || (s2 && s2->tipo == TIPO_FUNC)) {
+            char erro[256];
+            const char *func_name = s1 && s1->tipo == TIPO_FUNC ? $1->valor.sval : $3->valor.sval;
+            snprintf(erro, sizeof(erro), "Erro de tipo: tentativa de comparar a função '%s' com um valor", func_name);
+            adicionar_erro(erro);
+        }
+        $$ = criar_comparacao(OP_IGUAL, $1, $3); 
+    }
+    | expressao DIFERENTE expressao { 
+        // Verifica se algum dos operandos é uma função
+        Simbolo *s1 = NULL;
+        Simbolo *s2 = NULL;
+        if ($1->tipo == NO_IDENTIFICADOR) {
+            s1 = buscarSimbolo($1->valor.sval, escopo_atual);
+        }
+        if ($3->tipo == NO_IDENTIFICADOR) {
+            s2 = buscarSimbolo($3->valor.sval, escopo_atual);
+        }
+        
+        if ((s1 && s1->tipo == TIPO_FUNC) || (s2 && s2->tipo == TIPO_FUNC)) {
+            char erro[256];
+            const char *func_name = s1 && s1->tipo == TIPO_FUNC ? $1->valor.sval : $3->valor.sval;
+            snprintf(erro, sizeof(erro), "Erro de tipo: tentativa de comparar a função '%s' com um valor", func_name);
+            adicionar_erro(erro);
+        }
+        $$ = criar_comparacao(OP_DIFERENTE, $1, $3); 
+    }
+    | expressao MENOR expressao     { 
+        // Verifica se algum dos operandos é uma função
+        Simbolo *s1 = NULL;
+        Simbolo *s2 = NULL;
+        if ($1->tipo == NO_IDENTIFICADOR) {
+            s1 = buscarSimbolo($1->valor.sval, escopo_atual);
+        }
+        if ($3->tipo == NO_IDENTIFICADOR) {
+            s2 = buscarSimbolo($3->valor.sval, escopo_atual);
+        }
+        
+        if ((s1 && s1->tipo == TIPO_FUNC) || (s2 && s2->tipo == TIPO_FUNC)) {
+            char erro[256];
+            const char *func_name = s1 && s1->tipo == TIPO_FUNC ? $1->valor.sval : $3->valor.sval;
+            snprintf(erro, sizeof(erro), "Erro de tipo: tentativa de comparar a função '%s' com um valor", func_name);
+            adicionar_erro(erro);
+        }
+        $$ = criar_comparacao(OP_MENOR, $1, $3); 
+    }
+    | expressao MAIOR expressao     { 
+        // Verifica se algum dos operandos é uma função
+        Simbolo *s1 = NULL;
+        Simbolo *s2 = NULL;
+        if ($1->tipo == NO_IDENTIFICADOR) {
+            s1 = buscarSimbolo($1->valor.sval, escopo_atual);
+        }
+        if ($3->tipo == NO_IDENTIFICADOR) {
+            s2 = buscarSimbolo($3->valor.sval, escopo_atual);
+        }
+        
+        if ((s1 && s1->tipo == TIPO_FUNC) || (s2 && s2->tipo == TIPO_FUNC)) {
+            char erro[256];
+            const char *func_name = s1 && s1->tipo == TIPO_FUNC ? $1->valor.sval : $3->valor.sval;
+            snprintf(erro, sizeof(erro), "Erro de tipo: tentativa de comparar a função '%s' com um valor", func_name);
+            adicionar_erro(erro);
+        }
+        $$ = criar_comparacao(OP_MAIOR, $1, $3); 
+    }
+    | expressao MENOR_IGUAL expressao { 
+        // Verifica se algum dos operandos é uma função
+        Simbolo *s1 = NULL;
+        Simbolo *s2 = NULL;
+        if ($1->tipo == NO_IDENTIFICADOR) {
+            s1 = buscarSimbolo($1->valor.sval, escopo_atual);
+        }
+        if ($3->tipo == NO_IDENTIFICADOR) {
+            s2 = buscarSimbolo($3->valor.sval, escopo_atual);
+        }
+        
+        if ((s1 && s1->tipo == TIPO_FUNC) || (s2 && s2->tipo == TIPO_FUNC)) {
+            char erro[256];
+            const char *func_name = s1 && s1->tipo == TIPO_FUNC ? $1->valor.sval : $3->valor.sval;
+            snprintf(erro, sizeof(erro), "Erro de tipo: tentativa de comparar a função '%s' com um valor", func_name);
+            adicionar_erro(erro);
+        }
+        $$ = criar_comparacao(OP_MENOR_IGUAL, $1, $3); 
+    }
+    | expressao MAIOR_IGUAL expressao { 
+        // Verifica se algum dos operandos é uma função
+        Simbolo *s1 = NULL;
+        Simbolo *s2 = NULL;
+        if ($1->tipo == NO_IDENTIFICADOR) {
+            s1 = buscarSimbolo($1->valor.sval, escopo_atual);
+        }
+        if ($3->tipo == NO_IDENTIFICADOR) {
+            s2 = buscarSimbolo($3->valor.sval, escopo_atual);
+        }
+        
+        if ((s1 && s1->tipo == TIPO_FUNC) || (s2 && s2->tipo == TIPO_FUNC)) {
+            char erro[256];
+            const char *func_name = s1 && s1->tipo == TIPO_FUNC ? $1->valor.sval : $3->valor.sval;
+            snprintf(erro, sizeof(erro), "Erro de tipo: tentativa de comparar a função '%s' com um valor", func_name);
+            adicionar_erro(erro);
+        }
+        $$ = criar_comparacao(OP_MAIOR_IGUAL, $1, $3); 
+    }
     | INTEIRO                      { $$ = criar_numero($1); }
     | FLUTUANTE                    { $$ = criar_flutuante($1); }
     | IDENTIFICADOR                {
         // Verifica se a variável foi declarada
         if (!buscarSimbolo($1, escopo_atual)) {
-            fprintf(stderr, "Erro: Variável '%s' não declarada (linha %d)\n", $1, num_linha);
-            exit(1);
+            char erro[256];
+            snprintf(erro, sizeof(erro), "Variável '%s' não declarada", $1);
+            adicionar_erro(erro);
         }
         $$ = criar_identificador($1);
     }
@@ -126,6 +342,12 @@ expressao
 
 %%
 void yyerror(const char *s) {
-    fprintf(stderr, "Erro na linha %d: %s\n", num_linha, s);
-    exit(1);
+    char erro[256];
+    // Mensagens de erro específicas
+    if (strstr(s, "expecting DOIS_PONTOS")) {
+        snprintf(erro, sizeof(erro), "Erro de sintaxe: faltando ':' após a palavra-chave");
+    } else {
+        snprintf(erro, sizeof(erro), "Erro de sintaxe: %s", s);
+    }
+    adicionar_erro(erro);
 }
