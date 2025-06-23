@@ -5,164 +5,165 @@
 #include <stdbool.h>
 
 // Funções de criação de nós da árvore sintática
-ASTNode *criar_no(enum NodeType type, ASTNode *left, ASTNode *right) {
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = type;
-    node->left = left;
-    node->right = right;
-    node->middle = NULL;
-    return node;
+No *criar_no(enum TipoNo tipo, No *esquerda, No *direita) {
+    No *no = malloc(sizeof(No));
+    no->tipo = tipo;
+    no->esquerda = esquerda;
+    no->direita = direita;
+    no->meio = NULL;
+    return no;
 }
 
-ASTNode *criar_function_def(char *name, ASTNode *params, ASTNode *body) {
-    ASTNode *node = criar_no(NODE_FUNCTION_DEF, params, body);
-    node->value.sval = strdup(name);
-    return node;
+No *criar_funcao(char *nome, No *params, No *corpo) {
+    No *no = criar_no(NO_DEF_FUNCAO, params, corpo);
+    no->valor.sval = strdup(nome);
+    return no;
 }
 
-ASTNode *criar_if(ASTNode *condition, ASTNode *if_body, ASTNode *else_body) {
-    ASTNode *node = criar_no(NODE_IF, condition, else_body);
-    node->middle = if_body;
-    return node;
+No *criar_if(No *condicao, No *corpo_if, No *corpo_else) {
+    No *no = criar_no(NO_IF, condicao, corpo_else);
+    no->meio = corpo_if;
+    return no;
 }
 
-ASTNode *criar_for(char *var, ASTNode *range, ASTNode *body) {
-    ASTNode *node = criar_no(NODE_FOR, range, body);
-    node->value.sval = strdup(var);
-    return node;
+No *criar_for(char *var, No *alcance, No *corpo) {
+    No *no = criar_no(NO_FOR, alcance, corpo);
+    no->valor.sval = strdup(var);
+    return no;
 }
 
-ASTNode *criar_print(ASTNode *expr) {
-    return criar_no(NODE_PRINT, expr, NULL);
+No *criar_print(No *expr) {
+    return criar_no(NO_PRINT, expr, NULL);
 }
 
-ASTNode *criar_assignment(char *var, ASTNode *expr) {
-    ASTNode *node = criar_no(NODE_ASSIGNMENT, NULL, expr);
-    node->value.sval = strdup(var);
-    return node;
+No *criar_atribuicao(char *var, No *expr) {
+    No *no = criar_no(NO_ATRIBUICAO, NULL, expr);
+    no->valor.sval = strdup(var);
+    return no;
 }
 
-ASTNode *criar_comparison(enum OpType op, ASTNode *left, ASTNode *right) {
-    ASTNode *node = criar_no(NODE_COMPARISON, left, right);
-    node->op = op;
-    return node;
+No *criar_comparacao(enum TipoOp op, No *esquerda, No *direita) {
+    No *no = criar_no(NO_COMPARACAO, esquerda, direita);
+    no->op = op;
+    return no;
 }
 
-ASTNode *criar_arithmetic(enum OpType op, ASTNode *left, ASTNode *right) {
-    ASTNode *node = criar_no(NODE_ARITHMETIC, left, right);
-    node->op = op;
-    return node;
+No *criar_aritmetico(enum TipoOp op, No *esquerda, No *direita) {
+    No *no = criar_no(NO_ARITMETICO, esquerda, direita);
+    no->op = op;
+    return no;
 }
 
-ASTNode *criar_number(int value) {
-    ASTNode *node = criar_no(NODE_NUMBER, NULL, NULL);
-    node->value.ival = value;
-    return node;
+No *criar_numero(int valor) {
+    No *no = criar_no(NO_NUMERO, NULL, NULL);
+    no->valor.ival = valor;
+    return no;
 }
 
-ASTNode *criar_float(float value) {
-    ASTNode *node = criar_no(NODE_FLOAT, NULL, NULL);
-    node->value.fval = value;
-    return node;
+No *criar_flutuante(float valor) {
+    No *no = criar_no(NO_FLUTUANTE, NULL, NULL);
+    no->valor.fval = valor;
+    return no;
 }
 
-ASTNode *criar_identifier(char *name) {
-    ASTNode *node = criar_no(NODE_IDENTIFIER, NULL, NULL);
-    node->value.sval = strdup(name);
-    return node;
+No *criar_identificador(char *nome) {
+    No *no = criar_no(NO_IDENTIFICADOR, NULL, NULL);
+    no->valor.sval = strdup(nome);
+    return no;
 }
 
 // Função auxiliar para obter o símbolo da operação
-const char *get_op_string(enum OpType op) {
+const char *obter_string_op(enum TipoOp op) {
     switch (op) {
-        case OP_PLUS: return "+";
-        case OP_MINUS: return "-";
-        case OP_TIMES: return "*";
+        case OP_MAIS: return "+";
+        case OP_MENOS: return "-";
+        case OP_VEZES: return "*";
         case OP_DIVIDE: return "/";
-        case OP_EQ: return "==";
-        case OP_NEQ: return "!=";
-        case OP_LT: return "<";
-        case OP_GT: return ">";
-        case OP_LTE: return "<=";
-        case OP_GTE: return ">=";
+        case OP_IGUAL: return "==";
+        case OP_DIFERENTE: return "!=";
+        case OP_MENOR: return "<";
+        case OP_MAIOR: return ">";
+        case OP_MENOR_IGUAL: return "<=";
+        case OP_MAIOR_IGUAL: return ">=";
         default: return "?";
     }
 }
 
 // Estrutura para armazenar variáveis já declaradas
-struct VarList {
-    char name[64];
-    bool is_float;
-    struct VarList *next;
+struct ListaVar {
+    char nome[64];
+    bool eh_flutuante;
+    struct ListaVar *prox;
 };
 
 // Função auxiliar para checar se variável já foi declarada e seu tipo
-static struct VarList *find_var(struct VarList *vars, const char *name) {
+static struct ListaVar *buscar_var(struct ListaVar *vars, const char *nome) {
     while (vars) {
-        if (strcmp(vars->name, name) == 0) return vars;
-        vars = vars->next;
+        if (strcmp(vars->nome, nome) == 0) return vars;
+        vars = vars->prox;
     }
     return NULL;
 }
 
 // Função para determinar se um nó é float
-static bool is_float_node(ASTNode *node) {
-    if (!node) return false;
-    if (node->type == NODE_FLOAT) return true;
-    if (node->type == NODE_ARITHMETIC) {
-        // Se qualquer lado for float, resultado é float
-        return is_float_node(node->left) || is_float_node(node->right);
+static bool eh_no_flutuante(No *no) {
+    if (!no) return false;
+    if (no->tipo == NO_FLUTUANTE) return true;
+    if (no->tipo == NO_ARITMETICO) {
+        // Se qualquer lado for flutuante, resultado é flutuante
+        return eh_no_flutuante(no->esquerda) || eh_no_flutuante(no->direita);
     }
-    if (node->type == NODE_IDENTIFIER) {
-        // Não é possível saber aqui, assume int (ou poderia melhorar)
+    if (no->tipo == NO_IDENTIFICADOR) {
+        // Não é possível saber aqui, assume inteiro
         return false;
     }
     return false;
 }
 
+
 // Função auxiliar para adicionar variável à lista, promovendo para float se necessário
-void add_var(struct VarList **vars, const char *name, bool is_float) {
-    struct VarList *v = find_var(*vars, name);
+void adicionar_var(struct ListaVar **vars, const char *nome, bool eh_flutuante) {
+    struct ListaVar *v = buscar_var(*vars, nome);
     if (v) {
-        if (is_float) v->is_float = true; // Promove para float se necessário
+        if (eh_flutuante) v->eh_flutuante = true;
         return;
     }
-    struct VarList *new_var = malloc(sizeof(struct VarList));
-    strncpy(new_var->name, name, 63);
-    new_var->name[63] = '\0';
-    new_var->is_float = is_float;
-    new_var->next = *vars;
-    *vars = new_var;
+    struct ListaVar *nova_var = malloc(sizeof(struct ListaVar));
+    strncpy(nova_var->nome, nome, 63);
+    nova_var->nome[63] = '\0';
+    nova_var->eh_flutuante = eh_flutuante;
+    nova_var->prox = *vars;
+    *vars = nova_var;
 }
 
 // Função para coletar variáveis
-void collect_vars(ASTNode *node, struct VarList **vars) {
-    if (!node) return;
-    switch (node->type) {
-        case NODE_ASSIGNMENT:
-            add_var(vars, node->value.sval, is_float_node(node->right));
-            collect_vars(node->right, vars);
+void coletar_vars(No *no, struct ListaVar **vars) {
+    if (!no) return;
+    switch (no->tipo) {
+        case NO_ATRIBUICAO:
+            adicionar_var(vars, no->valor.sval, eh_no_flutuante(no->direita));
+            coletar_vars(no->direita, vars);
             break;
-        case NODE_STMT_LIST:
-            collect_vars(node->left, vars);
-            collect_vars(node->right, vars);
+        case NO_LISTA_COMANDOS:
+            coletar_vars(no->esquerda, vars);
+            coletar_vars(no->direita, vars);
             break;
-        case NODE_IF:
-            collect_vars(node->left, vars);
-            collect_vars(node->middle, vars);
-            collect_vars(node->right, vars);
+        case NO_IF:
+            coletar_vars(no->esquerda, vars);
+            coletar_vars(no->meio, vars);
+            coletar_vars(no->direita, vars);
             break;
-        case NODE_FOR:
-            collect_vars(node->left, vars);
-            collect_vars(node->right, vars);
+        case NO_FOR:
+            coletar_vars(no->esquerda, vars);
+            coletar_vars(no->direita, vars);
             break;
-        case NODE_PRINT:
-            collect_vars(node->left, vars);
+        case NO_PRINT:
+            coletar_vars(no->esquerda, vars);
             break;
-        case NODE_COMPARISON:
-        case NODE_ARITHMETIC:
-            collect_vars(node->left, vars);
-            collect_vars(node->right, vars);
+        case NO_COMPARACAO:
+        case NO_ARITMETICO:
+            coletar_vars(no->esquerda, vars);
+            coletar_vars(no->direita, vars);
             break;
         default:
             break;
@@ -170,159 +171,145 @@ void collect_vars(ASTNode *node, struct VarList **vars) {
 }
 
 // Função para imprimir declarações de variáveis
-void print_var_decls(struct VarList *vars, FILE *output) {
-    struct VarList *cur = vars;
-    while (cur) {
-        fprintf(output, "%s %s;\n", cur->is_float ? "float" : "int", cur->name);
-        cur = cur->next;
+void imprimir_decl_vars(struct ListaVar *vars, FILE *saida) {
+    struct ListaVar *atual = vars;
+    while (atual) {
+        fprintf(saida, "%s %s;\n", atual->eh_flutuante ? "float" : "int", atual->nome);
+        atual = atual->prox;
     }
 }
+
 // Função para gerar código C a partir da AST
 // Esta função percorre a AST e gera o código C correspondente
-void gerar_funcoes(ASTNode *node, FILE *output) {
-    if (!node) return;
+void gerar_funcoes(No *no, FILE *saida) {
+    if (!no) return;
 
-    if (node->type == NODE_STMT_LIST) {
-        gerar_funcoes(node->left, output);
-        gerar_funcoes(node->right, output);
-    } else if (node->type == NODE_FUNCTION_DEF) {
+    if (no->tipo == NO_LISTA_COMANDOS) {
+        gerar_funcoes(no->esquerda, saida);
+        gerar_funcoes(no->direita, saida);
+    } else if (no->tipo == NO_DEF_FUNCAO) {
         // Cabeçalho da função
-        fprintf(output, "void %s() {\n", node->value.sval);
+        fprintf(saida, "void %s() {\n", no->valor.sval);
 
         // 1) Coletar e declarar variáveis locais, com 1 nível de indentação (4 espaços)
-        struct VarList *vars = NULL;
-        collect_vars(node->right, &vars);
-        for (struct VarList *cur = vars; cur; cur = cur->next) {
-            fprintf(output, "    %s %s;\n",
-                    cur->is_float ? "float" : "int",
-                    cur->name);
+        struct ListaVar *vars = NULL;
+        coletar_vars(no->direita, &vars);
+        for (struct ListaVar *cur = vars; cur; cur = cur->prox) {
+            fprintf(saida, "    %s %s;\n",
+                    cur->eh_flutuante ? "float" : "int",
+                    cur->nome);
         }
 
         // 2) Gerar o corpo da função, também com indentação de 1 nível
-        gerar_codigo_c_interno(node->right, output, 1);
+        gerar_codigo_c_interno(no->direita, saida, 1);
 
         // 3) Liberar a lista de variáveis
         while (vars) {
-            struct VarList *tmp = vars;
-            vars = vars->next;
+            struct ListaVar *tmp = vars;
+            vars = vars->prox;
             free(tmp);
         }
 
         // Fecha a função
-        fprintf(output, "}\n\n");
+        fprintf(saida, "}\n\n");
     }
 }
 
-
-
 // Função principal para gerar código C a partir da AST
-
-void gerar_codigo_c(ASTNode *node, FILE *output) {
+void gerar_codigo_c(No *no, FILE *saida) {
     static bool header_printed = false;
-    struct VarList *vars = NULL;
+    struct ListaVar *vars = NULL;
 
     // imprime o include apenas na primeira vez
     if (!header_printed) {
-        fprintf(output, "#include <stdio.h>\n\n");
+        fprintf(saida, "#include <stdio.h>\n\n");
         header_printed = true;
     }
 
     // Primeiro: gerar as funções fora do main
-    gerar_funcoes(node, output);
+    gerar_funcoes(no, saida);
 
     // Agora o main
-    collect_vars(node, &vars);
-    fprintf(output, "int main() {\n");
-    print_var_decls(vars, output);
-    gerar_codigo_c_interno(node, output, 1);
-    fprintf(output, "    return 0;\n}\n");
+    coletar_vars(no, &vars);
+    fprintf(saida, "int main() {\n");
+    imprimir_decl_vars(vars, saida);
+    gerar_codigo_c_interno(no, saida, 1);
+    fprintf(saida, "    return 0;\n}\n");
 
     while (vars) {
-        struct VarList *tmp = vars;
-        vars = vars->next;
+        struct ListaVar *tmp = vars;
+        vars = vars->prox;
         free(tmp);
     }
 }
 
 
 // Função recursiva auxiliar para geração de código C com indentação
-void gerar_codigo_c_interno(ASTNode *node, FILE *output, int indent) {
-    if (!node) return;
-
+void gerar_codigo_c_interno(No *no, FILE *saida, int indent) {
+    if (!no) return;
     char ind[32];
     memset(ind, ' ', indent * 4);
     ind[indent * 4] = '\0';
-
-    switch (node->type) {
-        case NODE_FUNCTION_DEF:
+    switch (no->tipo) {
+        case NO_DEF_FUNCAO:
             // Ignorar: as funções já foram geradas antes do main
             break;
-
-        case NODE_STMT_LIST:
-            gerar_codigo_c_interno(node->left, output, indent);
-            if (node->right) gerar_codigo_c_interno(node->right, output, indent);
+        case NO_LISTA_COMANDOS:
+            gerar_codigo_c_interno(no->esquerda, saida, indent);
+            if (no->direita) gerar_codigo_c_interno(no->direita, saida, indent);
             break;
-
-        case NODE_IF:
-            fprintf(output, "%sif ", ind);
-            gerar_codigo_c_interno(node->left, output, 0);
-            fprintf(output, " {\n");
-            gerar_codigo_c_interno(node->middle, output, indent + 1);
-            fprintf(output, "%s}", ind);
-            if (node->right) {
-                fprintf(output, " else {\n");
-                gerar_codigo_c_interno(node->right, output, indent + 1);
-                fprintf(output, "%s}", ind);
+        case NO_IF:
+            fprintf(saida, "%sif ", ind);
+            gerar_codigo_c_interno(no->esquerda, saida, 0);
+            fprintf(saida, " {\n");
+            gerar_codigo_c_interno(no->meio, saida, indent + 1);
+            fprintf(saida, "%s}", ind);
+            if (no->direita) {
+                fprintf(saida, " else {\n");
+                gerar_codigo_c_interno(no->direita, saida, indent + 1);
+                fprintf(saida, "%s}", ind);
             }
-            fprintf(output, "\n");
+            fprintf(saida, "\n");
             break;
-
-        case NODE_FOR:
-            fprintf(output, "%sfor (int %s = 0; %s < ", ind, node->value.sval, node->value.sval);
-            gerar_codigo_c_interno(node->left, output, 0);
-            fprintf(output, "; %s++) {\n", node->value.sval);
-            gerar_codigo_c_interno(node->right, output, indent + 1);
-            fprintf(output, "%s}\n", ind);
+        case NO_FOR:
+            fprintf(saida, "%sfor (int %s = 0; %s < ", ind, no->valor.sval, no->valor.sval);
+            gerar_codigo_c_interno(no->esquerda, saida, 0);
+            fprintf(saida, "; %s++) {\n", no->valor.sval);
+            gerar_codigo_c_interno(no->direita, saida, indent + 1);
+            fprintf(saida, "%s}\n", ind);
             break;
-
-        case NODE_PRINT: {
+        case NO_PRINT: {
             const char *fmt = "%d";
-            if (node->left && node->left->type == NODE_FLOAT) {
+            if (no->esquerda && no->esquerda->tipo == NO_FLUTUANTE) {
                 fmt = "%f";
             }
-            fprintf(output, "%sprintf(\"%s\\n\", ", ind, fmt);
-            gerar_codigo_c_interno(node->left, output, 0);
-            fprintf(output, ");\n");
+            fprintf(saida, "%sprintf(\"%s\\n\", ", ind, fmt);
+            gerar_codigo_c_interno(no->esquerda, saida, 0);
+            fprintf(saida, ");\n");
             break;
         }
-
-        case NODE_ASSIGNMENT:
-            fprintf(output, "%s%s = ", ind, node->value.sval);
-            gerar_codigo_c_interno(node->right, output, 0);
-            fprintf(output, ";\n");
+        case NO_ATRIBUICAO:
+            fprintf(saida, "%s%s = ", ind, no->valor.sval);
+            gerar_codigo_c_interno(no->direita, saida, 0);
+            fprintf(saida, ";\n");
             break;
-
-        case NODE_COMPARISON:
-        case NODE_ARITHMETIC:
-            fprintf(output, "(");
-            gerar_codigo_c_interno(node->left, output, 0);
-            fprintf(output, " %s ", get_op_string(node->op));
-            gerar_codigo_c_interno(node->right, output, 0);
-            fprintf(output, ")");
+        case NO_COMPARACAO:
+        case NO_ARITMETICO:
+            fprintf(saida, "(");
+            gerar_codigo_c_interno(no->esquerda, saida, 0);
+            fprintf(saida, " %s ", obter_string_op(no->op));
+            gerar_codigo_c_interno(no->direita, saida, 0);
+            fprintf(saida, ")");
             break;
-
-        case NODE_NUMBER:
-            fprintf(output, "%d", node->value.ival);
+        case NO_NUMERO:
+            fprintf(saida, "%d", no->valor.ival);
             break;
-
-        case NODE_FLOAT:
-            fprintf(output, "%f", node->value.fval);
+        case NO_FLUTUANTE:
+            fprintf(saida, "%f", no->valor.fval);
             break;
-
-        case NODE_IDENTIFIER:
-            fprintf(output, "%s", node->value.sval);
+        case NO_IDENTIFICADOR:
+            fprintf(saida, "%s", no->valor.sval);
             break;
-
         default:
             break;
     }
@@ -330,66 +317,66 @@ void gerar_codigo_c_interno(ASTNode *node, FILE *output, int indent) {
 
 
 // Impressão textual da AST para debug
-void imprimirAST(ASTNode *no, int nivel) {
+void imprimirAST(No *no, int nivel) {
     if (!no) return;
     for (int i = 0; i < nivel; i++) printf("  ");
-    switch (no->type) {
-        case NODE_STMT_LIST:
-            printf("STMT_LIST\n");
-            imprimirAST(no->left, nivel + 1);
-            imprimirAST(no->right, nivel + 1);
+    switch (no->tipo) {
+        case NO_LISTA_COMANDOS:
+            printf("LISTA_COMANDOS\n");
+            imprimirAST(no->esquerda, nivel + 1);
+            imprimirAST(no->direita, nivel + 1);
             break;
-        case NODE_IF:
+        case NO_IF:
             printf("IF\n");
-            imprimirAST(no->left, nivel + 1);    // cond
+            imprimirAST(no->esquerda, nivel + 1);    // condição
             for (int i = 0; i < nivel; i++) printf("  ");
-            printf("THEN:\n");
-            imprimirAST(no->middle, nivel + 1);  // then
-            if (no->right) {
+            printf("ENTAO:\n");
+            imprimirAST(no->meio, nivel + 1);  // então
+            if (no->direita) {
                 for (int i = 0; i < nivel; i++) printf("  ");
-                printf("ELSE:\n");
-                imprimirAST(no->right, nivel + 1); // else
+                printf("SENAO:\n");
+                imprimirAST(no->direita, nivel + 1); // senão
             }
             break;
-        case NODE_FOR:
-            printf("FOR var=%s\n", no->value.sval);
-            imprimirAST(no->left, nivel + 1);    // range
-            imprimirAST(no->right, nivel + 1);   // body
+        case NO_FOR:
+            printf("FOR var=%s\n", no->valor.sval);
+            imprimirAST(no->esquerda, nivel + 1);    // alcance
+            imprimirAST(no->direita, nivel + 1);   // corpo
             break;
-        case NODE_FUNCTION_DEF:
-            printf("DEF %s\n", no->value.sval);
-            imprimirAST(no->left, nivel + 1);    // range
-            imprimirAST(no->right, nivel + 1);
+        case NO_DEF_FUNCAO:
+            printf("DEF %s\n", no->valor.sval);
+            imprimirAST(no->esquerda, nivel + 1);    // range
+            imprimirAST(no->direita, nivel + 1);
             break;
-        case NODE_PRINT:
+        case NO_PRINT:
             printf("PRINT\n");
-            imprimirAST(no->left, nivel + 1);
+            imprimirAST(no->esquerda, nivel + 1);
             break;
-        case NODE_ASSIGNMENT:
-            printf("ASSIGN %s\n", no->value.sval);
-            imprimirAST(no->right, nivel + 1);
+        case NO_ATRIBUICAO:
+            printf("ATRIBUIR %s\n", no->valor.sval);
+            imprimirAST(no->direita, nivel + 1);
             break;
-        case NODE_COMPARISON:
-            printf("COMP %s\n", get_op_string(no->op));
-            imprimirAST(no->left, nivel + 1);
-            imprimirAST(no->right, nivel + 1);
+        case NO_COMPARACAO:
+            printf("COMPARACAO %s\n", obter_string_op(no->op));
+            imprimirAST(no->esquerda, nivel + 1);
+            imprimirAST(no->direita, nivel + 1);
             break;
-        case NODE_ARITHMETIC:
-            printf("ARITH %s\n", get_op_string(no->op));
-            imprimirAST(no->left, nivel + 1);
-            imprimirAST(no->right, nivel + 1);
+        case NO_ARITMETICO:
+            printf("ARITMETICO %s\n", obter_string_op(no->op));
+            imprimirAST(no->esquerda, nivel + 1);
+            imprimirAST(no->direita, nivel + 1);
             break;
-        case NODE_NUMBER:
-            printf("NUMBER %d\n", no->value.ival);
+        case NO_NUMERO:
+            printf("NUMERO %d\n", no->valor.ival);
             break;
-        case NODE_FLOAT:
-            printf("FLOAT %f\n", no->value.fval);
+        case NO_FLUTUANTE:
+            printf("FLUTUANTE %f\n", no->valor.fval);
             break;
-        case NODE_IDENTIFIER:
-            printf("IDENT %s\n", no->value.sval);
+        case NO_IDENTIFICADOR:
+            printf("IDENTIFICADOR %s\n", no->valor.sval);
             break;
         default:
-            printf("NODE type %d\n", no->type);
+            printf("NO tipo %d\n", no->tipo);
             break;
     }
 }
