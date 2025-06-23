@@ -42,11 +42,11 @@ int num_linha = 1;
 
 [ \t]+                 ; /* ignora espaços em branco */
 [\n]                   { num_linha++; }
-#.*                    ; /* ignora comentários */
+#.*    { fprintf(stderr, "Erro: Comentário encontrado na linha %d\n", num_linha); exit(1); }
 .                      { printf("Caractere inválido: %s\n", yytext); }
 
 %%
 
 int yywrap(void) {
     return 1;
-} 
+}
