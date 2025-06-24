@@ -4,74 +4,72 @@
 /*
  * Tipos de nós da árvore sintática
  */
-enum NodeType {
-    NODE_STMT_LIST,
-    NODE_FUNCTION_DEF,
-    NODE_IF,
-    NODE_FOR,
-    NODE_PRINT,
-    NODE_ASSIGNMENT,
-    NODE_COMPARISON,
-    NODE_ARITHMETIC,
-    NODE_NUMBER,
-    NODE_FLOAT,
-    NODE_IDENTIFIER
+enum TipoNo {
+    NO_LISTA_COMANDOS,
+    NO_DEF_FUNCAO,
+    NO_IF,
+    NO_FOR,
+    NO_PRINT,
+    NO_ATRIBUICAO,
+    NO_COMPARACAO,
+    NO_ARITMETICO,
+    NO_NUMERO,
+    NO_FLUTUANTE,
+    NO_IDENTIFICADOR
 };
 
 /*
  * Tipos de operações
  */
-enum OpType {
-    OP_PLUS,
-    OP_MINUS,
-    OP_TIMES,
+enum TipoOp {
+    OP_MAIS,
+    OP_MENOS,
+    OP_VEZES,
     OP_DIVIDE,
-    OP_EQ,
-    OP_NEQ,
-    OP_LT,
-    OP_GT,
-    OP_LTE,
-    OP_GTE
+    OP_IGUAL,
+    OP_DIFERENTE,
+    OP_MENOR,
+    OP_MAIOR,
+    OP_MENOR_IGUAL,
+    OP_MAIOR_IGUAL
 };
 
-/*
- * Estrutura de um nó da árvore sintática
- */
-typedef struct ASTNode {
-    enum NodeType type;
-    enum OpType op;
+// Estrutura de um nó da árvore sintática
+typedef struct No {
+    enum TipoNo tipo;
+    enum TipoOp op;
     union {
         int ival;
         float fval;
         char *sval;
-    } value;
-    struct ASTNode *left;
-    struct ASTNode *middle;  // Para if-else e para loops
-    struct ASTNode *right;
-} ASTNode;
+    } valor;
+    struct No *esquerda;
+    struct No *meio;  // Para if-else e para loops
+    struct No *direita;
+} No;
 
 // Nó global da raiz
-extern ASTNode *root;
+extern No *raiz;
 
 // Funções de criação de nós
-ASTNode *criar_no(enum NodeType type, ASTNode *left, ASTNode *right);
-ASTNode *criar_function_def(char *name, ASTNode *params, ASTNode *body);
-ASTNode *criar_if(ASTNode *condition, ASTNode *if_body, ASTNode *else_body);
-ASTNode *criar_for(char *var, ASTNode *range, ASTNode *body);
-ASTNode *criar_print(ASTNode *expr);
-ASTNode *criar_assignment(char *var, ASTNode *expr);
-ASTNode *criar_comparison(enum OpType op, ASTNode *left, ASTNode *right);
-ASTNode *criar_arithmetic(enum OpType op, ASTNode *left, ASTNode *right);
-ASTNode *criar_number(int value);
-ASTNode *criar_float(float value);
-ASTNode *criar_identifier(char *name);
+No *criar_no(enum TipoNo tipo, No *esquerda, No *direita);
+No *criar_funcao(char *nome, No *params, No *corpo);
+No *criar_if(No *condicao, No *corpo_if, No *corpo_else);
+No *criar_for(char *var, No *alcance, No *corpo);
+No *criar_print(No *expr);
+No *criar_atribuicao(char *var, No *expr);
+No *criar_comparacao(enum TipoOp op, No *esquerda, No *direita);
+No *criar_aritmetico(enum TipoOp op, No *esquerda, No *direita);
+No *criar_numero(int valor);
+No *criar_flutuante(float valor);
+No *criar_identificador(char *nome);
 
 // Função de geração de código
-void gerar_codigo_c(ASTNode *no, FILE *saida);
-void gerar_codigo_c_interno(ASTNode *no, FILE *saida, int identacao);
+void gerar_codigo_c(No *no, FILE *saida);
+void gerar_codigo_c_interno(No *no, FILE *saida, int identacao);
 
 
 // Função para imprimir a AST
-void imprimirAST(ASTNode *no, int nivel);
+void imprimirAST(No *no, int nivel);
 
 #endif 
