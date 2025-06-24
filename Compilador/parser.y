@@ -57,12 +57,14 @@ void adicionar_erro(const char *mensagem) {
 %type <arvore> expressao comando_print atribuicao
 %type <arvore> comando_def
 
+%define parse.error verbose
+
+// Definição de precedência e associatividade
 %left IGUAL DIFERENTE MENOR MAIOR MENOR_IGUAL MAIOR_IGUAL
 %left SOMA SUBTRACAO
 %left MULTIPLICACAO DIVISAO
-
-// Habilita o modo de recuperação de erros
-%error-verbose
+%nonassoc THEN
+%nonassoc ELSE
 
 %%
 
@@ -71,9 +73,7 @@ void adicionar_erro(const char *mensagem) {
  */
 programa
     : lista_comandos { 
-        if ($1 == NULL) {
-            adicionar_erro("Erro de sintaxe no programa");
-            raiz = NULL;
+        if ($1 == NULL) { adicionar_erro("Erro de sintaxe no programa"); raiz = NULL;
         } else {
             raiz = $1;
         }
@@ -96,7 +96,8 @@ programa
     }
     | error { 
         adicionar_erro("Erro de sintaxe no programa");
-        raiz = NULL; 
+        raiz = NULL;
+        yyerrok; 
     }
     ;
 
@@ -115,22 +116,10 @@ lista_comandos
             $$ = criar_no(NO_LISTA_COMANDOS, $1, $2);
         }
     }
-    | error { 
-        adicionar_erro("Erro de sintaxe na lista de comandos");
-        $$ = NULL;
-        yyerrok;
-    }
     ;
 
 comando
-    : comando_if {
-        if ($1 == NULL) {
-            $$ = NULL;
-            YYERROR;
-        } else {
-            $$ = $1;
-        }
-    }
+    : comando_if
     | comando_for
     | comando_print
     | atribuicao
@@ -143,7 +132,7 @@ comando
     ;
 
 comando_if
-    : IF expressao DOIS_PONTOS lista_comandos
+    : IF expressao DOIS_PONTOS lista_comandos %prec THEN
         { 
             if ($2 == NULL || $4 == NULL) {
                 $$ = NULL;
