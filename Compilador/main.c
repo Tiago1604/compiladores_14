@@ -5,7 +5,7 @@
 // Declaração de variáveis externas
 extern FILE *yyin;
 extern int yyparse(void);
-ASTNode *root;
+No *raiz;
 
 int main(int argc, char **argv) {
     // Verifica se o número de argumentos está correto
@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
     printf("[DEBUG] Parser terminou, começando geração de código...\n");
     
     // Gera o código C a partir da árvore sintática
-    gerar_codigo_c(root, saida);
+    gerar_codigo_c(raiz, saida);
     // Fecha os arquivos abertos
     fclose(yyin);
     fclose(saida);

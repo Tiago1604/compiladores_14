@@ -5,6 +5,20 @@
 
 #define TAM 211
 
+extern int escopo_atual;    // capturar o escopo global declarado no parser.c
+
+#define TAM 211
+
+/* Incrementa o escopo atual */
+void abrir_escopo() {
+    escopo_atual++;
+}
+
+/* Decrementa o escopo atual */
+void fechar_escopo() {
+    escopo_atual--;
+}
+
 static Simbolo *tabela[TAM] = {NULL};
 
 static unsigned hash(char *s) {
