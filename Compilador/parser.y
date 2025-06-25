@@ -15,7 +15,7 @@ int escopo_atual = 0;   /* escopo global */
     int inteiro;
     float flutuante;
     char *str;
-    No *arvore;          /* AST em “velha” API */
+    No *arvore;          /* AST em "velha" API */
 }
 
 /* tokens */
@@ -27,9 +27,10 @@ int escopo_atual = 0;   /* escopo global */
 %token ATRIBUICAO IGUAL DIFERENTE MENOR MAIOR MENOR_IGUAL MAIOR_IGUAL
 %token ABRE_PAR FECHA_PAR DOIS_PONTOS
 
-/* não usar “\” aqui: */
+/* não usar "\" aqui: */
 %type <arvore> programa
 %type <arvore> lista_comandos
+%type <arvore> chamada_funcao
 %type <arvore> comando
 %type <arvore> comando_se
 %type <arvore> comando_para
@@ -66,6 +67,7 @@ comando
     | comando_imprimir
     | atribuicao
     | comando_def
+    | chamada_funcao
     ;
 
 comando_se
@@ -102,13 +104,23 @@ atribuicao
     ;
 
 comando_def
-    : DEF IDENTIFICADOR ABRE_PAR FECHA_PAR DOIS_PONTOS lista_comandos
+    : DEF IDENTIFICADOR ABRE_PAR FECHA_PAR DOIS_PONTOS { inserirSimbolo($2, TIPO_FUNC, 0); } lista_comandos
       {
-        inserirSimbolo($2, TIPO_FUNC, escopo_atual);
-        $$ = criar_funcao($2, NULL, $6);
+        $$ = criar_funcao($2, NULL, $7);
       }
     ;
 
+chamada_funcao
+    : IDENTIFICADOR ABRE_PAR FECHA_PAR
+      {
+        if (!buscarSimbolo($1, 0)) {
+          fprintf(stderr, "Erro: função '%s' não declarada (linha %d)\n", $1, num_linha);
+          exit(1);
+        }
+        $$ = criar_chamada_funcao($1, NULL); // NULL para argumentos, se não houver
+      }
+    ;
+    
 expressao
     : expressao SOMA expressao
       { $$ = criar_aritmetico(OP_MAIS, $1, $3); }

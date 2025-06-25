@@ -15,5 +15,7 @@ typedef struct simbolo {
 void inserirSimbolo(char *nome, Tipo tipo, int escopo);
 Simbolo *buscarSimbolo(char *nome, int escopo);
 void imprimirTabela();
+void abrir_escopo();
+void fechar_escopo();
 
 #endif 

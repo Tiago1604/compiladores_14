@@ -43,9 +43,11 @@ void inserirSimbolo(char *nome, Tipo tipo, int escopo) {
 
 Simbolo *buscarSimbolo(char *nome, int escopo) {
     unsigned i = hash(nome);
-    for (Simbolo *s = tabela[i]; s; s = s->proximo) {
-        if (strcmp(s->nome, nome) == 0 && s->escopo == escopo)
-            return s;
+    for (; escopo >= 0; escopo--) {
+        for (Simbolo *s = tabela[i]; s; s = s->proximo) {
+            if (strcmp(s->nome, nome) == 0 && s->escopo == escopo)
+                return s;
+        }
     }
     return NULL;
 }

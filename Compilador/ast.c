@@ -72,6 +72,12 @@ No *criar_identificador(char *nome) {
     return no;
 }
 
+No *criar_chamada_funcao(char *nome, No *args) {
+    No *no = criar_no(NO_CHAMADA_FUNCAO, args, NULL);
+    no->valor.sval = strdup(nome);
+    return no;
+}
+
 // Função auxiliar para obter o símbolo da operação
 const char *obter_string_op(enum TipoOp op) {
     switch (op) {

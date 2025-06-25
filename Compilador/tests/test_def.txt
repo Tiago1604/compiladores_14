@@ -1,0 +1,5 @@
+def minhaFuncao():
+    x = 10
+    print(x)
+
+minhaFuncao()

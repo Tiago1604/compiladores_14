@@ -15,7 +15,8 @@ enum TipoNo {
     NO_ARITMETICO,
     NO_NUMERO,
     NO_FLUTUANTE,
-    NO_IDENTIFICADOR
+    NO_IDENTIFICADOR,
+    NO_CHAMADA_FUNCAO,
 };
 
 /*
@@ -63,6 +64,7 @@ No *criar_aritmetico(enum TipoOp op, No *esquerda, No *direita);
 No *criar_numero(int valor);
 No *criar_flutuante(float valor);
 No *criar_identificador(char *nome);
+No *criar_chamada_funcao(char *nome, No *args);
 
 // Função de geração de código
 void gerar_codigo_c(No *no, FILE *saida);
