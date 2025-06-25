@@ -1,0 +1,9 @@
+def minhaFuncao():
+    x = 10
+    print(x)
+
+def minhaFuncao():
+    y = 20
+    print(y)
+
+minhaFuncao()

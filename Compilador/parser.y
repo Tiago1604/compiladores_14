@@ -104,9 +104,23 @@ atribuicao
     ;
 
 comando_def
-    : DEF IDENTIFICADOR ABRE_PAR FECHA_PAR DOIS_PONTOS { inserirSimbolo($2, TIPO_FUNC, 0); } lista_comandos
+    : DEF IDENTIFICADOR ABRE_PAR FECHA_PAR DOIS_PONTOS 
+      { 
+        // Verificar se a função já foi declarada no escopo global
+        if (buscarSimbolo($2, 0)) {
+          fprintf(stderr, "Erro: função '%s' já foi declarada (linha %d)\n", $2, num_linha);
+          exit(1);
+        }
+        // Inserir função no escopo global
+        inserirSimbolo($2, TIPO_FUNC, 0); 
+        // Abrir novo escopo para variáveis locais da função
+        abrir_escopo();
+      } 
+      lista_comandos
       {
         $$ = criar_funcao($2, NULL, $7);
+        // Fechar escopo da função
+        fechar_escopo();
       }
     ;
 

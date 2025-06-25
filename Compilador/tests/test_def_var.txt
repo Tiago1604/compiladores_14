@@ -1,0 +1,5 @@
+def funcao1():
+    x = 10
+
+def funcao2():
+    x = 20

@@ -55,8 +55,15 @@ Simbolo *buscarSimbolo(char *nome, int escopo) {
 void imprimirTabela() {
     for (int i = 0; i < TAM; i++) {
         for (Simbolo *s = tabela[i]; s; s = s->proximo) {
+            const char *tipo_str;
+            switch(s->tipo) {
+                case TIPO_INT: tipo_str = "int"; break;
+                case TIPO_FLOAT: tipo_str = "float"; break;
+                case TIPO_FUNC: tipo_str = "function"; break;
+                default: tipo_str = "unknown"; break;
+            }
             printf("Nome: %s, Tipo: %s, Escopo: %d, Inicializada: %d\n",
-                s->nome, s->tipo == TIPO_INT ? "int" : "float", s->escopo, s->inicializada);
+                s->nome, tipo_str, s->escopo, s->inicializada);
         }
     }
 }
