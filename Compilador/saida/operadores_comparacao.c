@@ -1,14 +1,14 @@
 #include <stdio.h>
 
 int main() {
-int h;
-int g;
-int f;
-int e;
-int d;
-int c;
-int b;
-int a;
+    int h;
+    int g;
+    int f;
+    int e;
+    int d;
+    int c;
+    int b;
+    int a;
     a = 1;
     b = 2;
     c = (a < b);

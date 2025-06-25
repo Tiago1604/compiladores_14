@@ -2,7 +2,8 @@
 
 int main() {
     int x;
-    x = ((2 + 3) * 4);
-    printf("%d\n", x);
+    for (int i = 0; i < 2; i++) {
+        x = i;
+    }
     return 0;
 }

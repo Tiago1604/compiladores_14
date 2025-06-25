@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 int main() {
-int x;
+    int x;
     x = 0;
     for (int i = 0; i < 3; i++) {
         x = (x + i);

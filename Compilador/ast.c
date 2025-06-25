@@ -185,7 +185,7 @@ void coletar_vars(No *no, struct ListaVar **vars) {
 void imprimir_decl_vars(struct ListaVar *vars, FILE *saida) {
     struct ListaVar *atual = vars;
     while (atual) {
-        fprintf(saida, "%s %s;\n", atual->eh_flutuante ? "float" : "int", atual->nome);
+        fprintf(saida, "    %s %s;\n", atual->eh_flutuante ? "float" : "int", atual->nome);
         atual = atual->prox;
     }
 }

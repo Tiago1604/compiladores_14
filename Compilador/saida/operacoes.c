@@ -1,11 +1,11 @@
 #include <stdio.h>
 
 int main() {
-int igual;
-int w;
-int z;
-int y;
-int x;
+    int igual;
+    int w;
+    int z;
+    int y;
+    int x;
     x = 5;
     y = 2;
     z = ((x * y) + 3);

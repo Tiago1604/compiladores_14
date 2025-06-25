@@ -1,9 +1,9 @@
 #include <stdio.h>
 
 int main() {
-int menor;
-int y;
-int x;
+    int menor;
+    int y;
+    int x;
     x = 5;
     y = 10;
     if (x < y) {

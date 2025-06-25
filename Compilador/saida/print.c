@@ -1,8 +1,8 @@
 #include <stdio.h>
 
 int main() {
-float b;
-int a;
+    float b;
+    int a;
     a = 1;
     b = 2.500000;
     printf("%d\n", a);

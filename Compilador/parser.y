@@ -80,12 +80,15 @@ comando_if
     ;
 
 comando_for
-    : FOR IDENTIFICADOR IN RANGE ABRE_PAR expressao FECHA_PAR DOIS_PONTOS lista_comandos
+    : FOR IDENTIFICADOR IN RANGE ABRE_PAR expressao FECHA_PAR DOIS_PONTOS
       {
-        abrir_escopo();
+        // Inserir a variável 'i' no escopo atual antes de processar o corpo
         inserirSimbolo($2, TIPO_INT, escopo_atual);
-        $$ = criar_for($2, $6, $9);
-        fechar_escopo();
+        // Não abrir novo escopo aqui, pois isto isolaria a variável
+      }
+      lista_comandos
+      {
+        $$ = criar_for($2, $6, $10); // Ajuste o número de $10 para refletir a posição correta
       }
     ;
   
