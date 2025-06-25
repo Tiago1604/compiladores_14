@@ -32,6 +32,11 @@ No *criar_for(char *var, No *alcance, No *corpo) {
     return no;
 }
 
+No *criar_while(No *cond, No *body) {
+    No *no = criar_no(NO_WHILE, cond, body);
+    return no;
+}
+
 No *criar_print(No *expr) {
     return criar_no(NO_PRINT, expr, NULL);
 }
@@ -372,6 +377,15 @@ void gerar_codigo_c_interno(No *no, FILE *saida, int indent) {
             gerar_codigo_c_interno(no->direita, saida, indent + 1);
             fprintf(saida, "%s}\n", ind);
             break;
+            
+        case NO_WHILE:
+            fprintf(saida, "%swhile (", ind);
+            gerar_codigo_c_interno(no->esquerda, saida, 0);
+            fprintf(saida, ") {\n");
+            gerar_codigo_c_interno(no->direita, saida, indent + 1);
+            fprintf(saida, "%s}\n", ind);
+            break;
+            
         case NO_PRINT: {
             const char *fmt = "%d";
             if (no->esquerda && no->esquerda->tipo == NO_FLUTUANTE) {

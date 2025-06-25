@@ -60,24 +60,25 @@ extern int yydebug;
     IF = 261,                      /* IF  */
     ELSE = 262,                    /* ELSE  */
     FOR = 263,                     /* FOR  */
-    IN = 264,                      /* IN  */
-    RANGE = 265,                   /* RANGE  */
-    PRINT = 266,                   /* PRINT  */
-    DEF = 267,                     /* DEF  */
-    SOMA = 268,                    /* SOMA  */
-    SUBTRACAO = 269,               /* SUBTRACAO  */
-    MULTIPLICACAO = 270,           /* MULTIPLICACAO  */
-    DIVISAO = 271,                 /* DIVISAO  */
-    ATRIBUICAO = 272,              /* ATRIBUICAO  */
-    IGUAL = 273,                   /* IGUAL  */
-    DIFERENTE = 274,               /* DIFERENTE  */
-    MENOR = 275,                   /* MENOR  */
-    MAIOR = 276,                   /* MAIOR  */
-    MENOR_IGUAL = 277,             /* MENOR_IGUAL  */
-    MAIOR_IGUAL = 278,             /* MAIOR_IGUAL  */
-    ABRE_PAR = 279,                /* ABRE_PAR  */
-    FECHA_PAR = 280,               /* FECHA_PAR  */
-    DOIS_PONTOS = 281              /* DOIS_PONTOS  */
+    WHILE = 264,                   /* WHILE  */
+    IN = 265,                      /* IN  */
+    RANGE = 266,                   /* RANGE  */
+    PRINT = 267,                   /* PRINT  */
+    DEF = 268,                     /* DEF  */
+    SOMA = 269,                    /* SOMA  */
+    SUBTRACAO = 270,               /* SUBTRACAO  */
+    MULTIPLICACAO = 271,           /* MULTIPLICACAO  */
+    DIVISAO = 272,                 /* DIVISAO  */
+    ATRIBUICAO = 273,              /* ATRIBUICAO  */
+    IGUAL = 274,                   /* IGUAL  */
+    DIFERENTE = 275,               /* DIFERENTE  */
+    MENOR = 276,                   /* MENOR  */
+    MAIOR = 277,                   /* MAIOR  */
+    MENOR_IGUAL = 278,             /* MENOR_IGUAL  */
+    MAIOR_IGUAL = 279,             /* MAIOR_IGUAL  */
+    ABRE_PAR = 280,                /* ABRE_PAR  */
+    FECHA_PAR = 281,               /* FECHA_PAR  */
+    DOIS_PONTOS = 282              /* DOIS_PONTOS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -91,9 +92,9 @@ union YYSTYPE
     int inteiro;
     float flutuante;
     char *str;
-    No *arvore;          /* AST em “velha” API */
+    No *arvore;          /* AST em "velha" API */
 
-#line 97 "build/parser.tab.h"
+#line 98 "build/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

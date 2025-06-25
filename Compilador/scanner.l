@@ -15,6 +15,7 @@ int num_linha = 1;
 "if"            { return IF; }
 "else"          { return ELSE; }
 "for"           { return FOR; }
+"while"         { return WHILE; } 
 "in"            { return IN; }
 "range"         { return RANGE; }
 "print"         { return PRINT; }

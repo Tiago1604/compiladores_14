@@ -22,7 +22,7 @@ int escopo_atual = 0;   /* escopo global */
 %token <inteiro> INTEIRO
 %token <flutuante> FLUTUANTE
 %token <str> IDENTIFICADOR
-%token IF ELSE FOR IN RANGE PRINT DEF
+%token IF ELSE FOR WHILE IN RANGE PRINT DEF
 %token SOMA SUBTRACAO MULTIPLICACAO DIVISAO
 %token ATRIBUICAO IGUAL DIFERENTE MENOR MAIOR MENOR_IGUAL MAIOR_IGUAL
 %token ABRE_PAR FECHA_PAR DOIS_PONTOS
@@ -38,6 +38,7 @@ int escopo_atual = 0;   /* escopo global */
 %type <arvore> atribuicao
 %type <arvore> comando_def
 %type <arvore> expressao
+%type <arvore> comando_while
 
 /* precedências */
 %left IGUAL DIFERENTE MENOR MAIOR MENOR_IGUAL MAIOR_IGUAL
@@ -64,6 +65,7 @@ lista_comandos
 comando
     : comando_if
     | comando_for
+    | comando_while
     | comando_print
     | atribuicao
     | comando_def
@@ -86,6 +88,16 @@ comando_for
         fechar_escopo();
       }
     ;
+  
+comando_while
+    : WHILE expressao DOIS_PONTOS lista_comandos
+      {
+        abrir_escopo();
+        $$ = criar_while($2, $4);
+        fechar_escopo();
+      }
+    ;
+
 
 comando_print
     : PRINT ABRE_PAR expressao FECHA_PAR
