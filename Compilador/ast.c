@@ -70,15 +70,12 @@ No *criar_identificador(char *nome) {
     No *no = criar_no(NO_IDENTIFICADOR, NULL, NULL);
     no->valor.sval = strdup(nome);
     return no;
-<<<<<<< saida-boa-adapta
 }
 
 No *criar_chamada_funcao(char *nome, No *args) {
     No *no = criar_no(NO_CHAMADA_FUNCAO, args, NULL);
     no->valor.sval = strdup(nome);
     return no;
-=======
->>>>>>> main
 }
 
 // Função auxiliar para obter o símbolo da operação
@@ -114,11 +111,7 @@ static struct ListaVar *buscar_var(struct ListaVar *vars, const char *nome) {
     return NULL;
 }
 
-<<<<<<< saida-boa-adapta
 // Função para determinar se um nó é float
-=======
-// Função para determinar se um nó é flutuante
->>>>>>> main
 static bool eh_no_flutuante(No *no) {
     if (!no) return false;
     if (no->tipo == NO_FLUTUANTE) return true;
@@ -133,12 +126,8 @@ static bool eh_no_flutuante(No *no) {
     return false;
 }
 
-<<<<<<< saida-boa-adapta
 
 // Função auxiliar para adicionar variável à lista, promovendo para float se necessário
-=======
-// Função auxiliar para adicionar variável à lista
->>>>>>> main
 void adicionar_var(struct ListaVar **vars, const char *nome, bool eh_flutuante) {
     struct ListaVar *v = buscar_var(*vars, nome);
     if (v) {
@@ -193,7 +182,6 @@ void imprimir_decl_vars(struct ListaVar *vars, FILE *saida) {
     while (atual) {
         fprintf(saida, "%s %s;\n", atual->eh_flutuante ? "float" : "int", atual->nome);
         atual = atual->prox;
-<<<<<<< saida-boa-adapta
     }
 }
 
@@ -342,19 +330,6 @@ void gerar_codigo_c(No *no, FILE *saida) {
     gerar_codigo_c_interno(comandos_globais, saida, 1);
     fprintf(saida, "    return 0;\n}\n");
 
-=======
-    }
-}
-
-// Função principal de geração de código C
-void gerar_codigo_c(No *no, FILE *saida) {
-    struct ListaVar *vars = NULL;
-    coletar_vars(no, &vars);
-    fprintf(saida, "int main() {\n");
-    imprimir_decl_vars(vars, saida);
-    gerar_codigo_c_interno(no, saida, 1);
-    fprintf(saida, "    return 0;\n}\n");
->>>>>>> main
     while (vars) {
         struct ListaVar *tmp = vars;
         vars = vars->prox;
@@ -370,12 +345,9 @@ void gerar_codigo_c_interno(No *no, FILE *saida, int indent) {
     memset(ind, ' ', indent * 4);
     ind[indent * 4] = '\0';
     switch (no->tipo) {
-<<<<<<< saida-boa-adapta
         case NO_DEF_FUNCAO:
             // Ignorar: as funções já foram geradas antes do main
             break;
-=======
->>>>>>> main
         case NO_LISTA_COMANDOS:
             gerar_codigo_c_interno(no->esquerda, saida, indent);
             if (no->direita) gerar_codigo_c_interno(no->direita, saida, indent);
@@ -431,14 +403,11 @@ void gerar_codigo_c_interno(No *no, FILE *saida, int indent) {
             break;
         case NO_IDENTIFICADOR:
             fprintf(saida, "%s", no->valor.sval);
-<<<<<<< saida-boa-adapta
             break;
         case NO_CHAMADA_FUNCAO:
             fprintf(saida, "%s%s(", ind, no->valor.sval);
             // Por enquanto, assumimos que não há argumentos
             fprintf(saida, ");\n");
-=======
->>>>>>> main
             break;
         default:
             break;
@@ -471,14 +440,11 @@ void imprimirAST(No *no, int nivel) {
             printf("FOR var=%s\n", no->valor.sval);
             imprimirAST(no->esquerda, nivel + 1);    // alcance
             imprimirAST(no->direita, nivel + 1);   // corpo
-<<<<<<< saida-boa-adapta
             break;
         case NO_DEF_FUNCAO:
             printf("DEF %s\n", no->valor.sval);
             imprimirAST(no->esquerda, nivel + 1);    // range
             imprimirAST(no->direita, nivel + 1);
-=======
->>>>>>> main
             break;
         case NO_PRINT:
             printf("PRINT\n");

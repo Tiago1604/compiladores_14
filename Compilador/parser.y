@@ -32,9 +32,9 @@ int escopo_atual = 0;   /* escopo global */
 %type <arvore> lista_comandos
 %type <arvore> chamada_funcao
 %type <arvore> comando
-%type <arvore> comando_se
-%type <arvore> comando_para
-%type <arvore> comando_imprimir
+%type <arvore> comando_if
+%type <arvore> comando_for
+%type <arvore> comando_print
 %type <arvore> atribuicao
 %type <arvore> comando_def
 %type <arvore> expressao
@@ -87,7 +87,7 @@ comando_for
       }
     ;
 
-comando_imprimir
+comando_print
     : PRINT ABRE_PAR expressao FECHA_PAR
       { $$ = criar_print($3); }
     ;
