@@ -62,22 +62,22 @@ lista_comandos
     ;
 
 comando
-    : comando_se
-    | comando_para
-    | comando_imprimir
+    : comando_if
+    | comando_for
+    | comando_print
     | atribuicao
     | comando_def
     | chamada_funcao
     ;
 
-comando_se
+comando_if
     : IF expressao DOIS_PONTOS lista_comandos
       { $$ = criar_if($2, $4, NULL); }
     | IF expressao DOIS_PONTOS lista_comandos ELSE DOIS_PONTOS lista_comandos
       { $$ = criar_if($2, $4, $7); }
     ;
 
-comando_para
+comando_for
     : FOR IDENTIFICADOR IN RANGE ABRE_PAR expressao FECHA_PAR DOIS_PONTOS lista_comandos
       {
         abrir_escopo();

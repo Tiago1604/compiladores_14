@@ -17,8 +17,12 @@ enum TipoNo {
     NO_ARITMETICO,
     NO_NUMERO,
     NO_FLUTUANTE,
+<<<<<<< saida-boa-adapta
     NO_IDENTIFICADOR,
     NO_CHAMADA_FUNCAO,
+=======
+    NO_IDENTIFICADOR
+>>>>>>> main
 };
 
 /*
@@ -66,15 +70,21 @@ No *criar_aritmetico(enum TipoOp op, No *esquerda, No *direita);
 No *criar_numero(int valor);
 No *criar_flutuante(float valor);
 No *criar_identificador(char *nome);
+<<<<<<< saida-boa-adapta
 No *criar_chamada_funcao(char *nome, No *args);
+=======
+>>>>>>> main
 
 // Função de geração de código
 void gerar_codigo_c(No *no, FILE *saida);
 void gerar_codigo_c_interno(No *no, FILE *saida, int identacao);
+<<<<<<< saida-boa-adapta
 void coletar_vars(No *no, struct ListaVar **vars);
 void extrair_comandos_globais(No *no, No **comandos_globais, No **definicoes_funcoes);
 void extrair_corpo_funcao(No *no, No **corpo);
 void extrair_comandos_globais_do_corpo(No *no, No **comandos_globais);
+=======
+>>>>>>> main
 
 // Função para imprimir a AST
 void imprimirAST(No *no, int nivel);
