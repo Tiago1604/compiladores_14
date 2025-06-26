@@ -5,6 +5,20 @@
 
 #define TAM 211
 
+extern int escopo_atual;    // capturar o escopo global declarado no parser.c
+
+#define TAM 211
+
+/* Incrementa o escopo atual */
+void abrir_escopo() {
+    escopo_atual++;
+}
+
+/* Decrementa o escopo atual */
+void fechar_escopo() {
+    escopo_atual--;
+}
+
 static Simbolo *tabela[TAM] = {NULL};
 
 static unsigned hash(char *s) {
@@ -29,9 +43,11 @@ void inserirSimbolo(char *nome, Tipo tipo, int escopo) {
 
 Simbolo *buscarSimbolo(char *nome, int escopo) {
     unsigned i = hash(nome);
-    for (Simbolo *s = tabela[i]; s; s = s->proximo) {
-        if (strcmp(s->nome, nome) == 0 && s->escopo == escopo)
-            return s;
+    for (; escopo >= 0; escopo--) {
+        for (Simbolo *s = tabela[i]; s; s = s->proximo) {
+            if (strcmp(s->nome, nome) == 0 && s->escopo == escopo)
+                return s;
+        }
     }
     return NULL;
 }
@@ -39,8 +55,15 @@ Simbolo *buscarSimbolo(char *nome, int escopo) {
 void imprimirTabela() {
     for (int i = 0; i < TAM; i++) {
         for (Simbolo *s = tabela[i]; s; s = s->proximo) {
+            const char *tipo_str;
+            switch(s->tipo) {
+                case TIPO_INT: tipo_str = "int"; break;
+                case TIPO_FLOAT: tipo_str = "float"; break;
+                case TIPO_FUNC: tipo_str = "function"; break;
+                default: tipo_str = "unknown"; break;
+            }
             printf("Nome: %s, Tipo: %s, Escopo: %d, Inicializada: %d\n",
-                s->nome, s->tipo == TIPO_INT ? "int" : "float", s->escopo, s->inicializada);
+                s->nome, tipo_str, s->escopo, s->inicializada);
         }
     }
 }

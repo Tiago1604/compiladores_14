@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string.h>
 #include "ast.h"
 #include "tabela.h"
 
@@ -40,13 +41,14 @@ void adicionar_erro(const char *mensagem) {
     int inteiro;
     float flutuante;
     char *str;
-    No *arvore;
+    No *arvore;          /* AST em "velha" API */
 }
 
+/* tokens */
 %token <inteiro> INTEIRO
 %token <flutuante> FLUTUANTE
 %token <str> IDENTIFICADOR
-%token IF ELSE FOR IN RANGE PRINT
+%token IF ELSE FOR IN RANGE PRINT DEF
 %token SOMA SUBTRACAO MULTIPLICACAO DIVISAO
 %token ATRIBUICAO IGUAL DIFERENTE MENOR MAIOR MENOR_IGUAL MAIOR_IGUAL
 %token ABRE_PAR FECHA_PAR DOIS_PONTOS
@@ -56,6 +58,8 @@ void adicionar_erro(const char *mensagem) {
 %type <arvore> comando_if comando_for
 %type <arvore> expressao comando_print atribuicao
 %type <arvore> comando_def
+%type <arvore> expressao
+%type <arvore> chamada_funcao
 
 %define parse.error verbose
 
@@ -68,9 +72,6 @@ void adicionar_erro(const char *mensagem) {
 
 %%
 
-/*
- * Regras de produção da gramática
- */
 programa
     : lista_comandos { 
         if ($1 == NULL) { adicionar_erro("Erro de sintaxe no programa"); raiz = NULL;
@@ -124,6 +125,7 @@ comando
     | comando_print
     | atribuicao
     | comando_def
+    | chamada_funcao
     | error { 
         adicionar_erro("Erro de sintaxe no comando");
         $$ = NULL;
@@ -162,40 +164,62 @@ comando_if
 
 comando_for
     : FOR IDENTIFICADOR IN RANGE ABRE_PAR expressao FECHA_PAR DOIS_PONTOS lista_comandos
-        {
-            // Inserir variável de controle do for como int
-            inserirSimbolo($2, TIPO_INT, escopo_atual);
-            $$ = criar_for($2, $6, $9);
-        }
+      {
+        abrir_escopo();
+        inserirSimbolo($2, TIPO_INT, escopo_atual);
+        $$ = criar_for($2, $6, $9);
+        fechar_escopo();
+      }
     ;
 
 comando_print
-    : PRINT ABRE_PAR expressao FECHA_PAR { $$ = criar_print($3); }
+    : PRINT ABRE_PAR expressao FECHA_PAR
+      { $$ = criar_print($3); }
     ;
 
 atribuicao
-    : IDENTIFICADOR ATRIBUICAO expressao {
-        // Inferir tipo da expressão
+    : IDENTIFICADOR ATRIBUICAO expressao
+      {
         Tipo tipo = TIPO_INT;
         if ($3 && $3->tipo == NO_FLUTUANTE) tipo = TIPO_FLOAT;
-        // Inserir na tabela se não existir
-        if (!buscarSimbolo($1, escopo_atual)) {
+        if (!buscarSimbolo($1, escopo_atual))
             inserirSimbolo($1, tipo, escopo_atual);
-        }
         $$ = criar_atribuicao($1, $3);
-    }
+      }
     ;
 
 comando_def
-    : DEF IDENTIFICADOR ABRE_PAR FECHA_PAR DOIS_PONTOS {
-        // Declarar a função antes de processar seu corpo
-        inserirSimbolo($2, TIPO_FUNC, escopo_atual);
-    } lista_comandos
-    {
+    : DEF IDENTIFICADOR ABRE_PAR FECHA_PAR DOIS_PONTOS 
+      { 
+        // Verificar se a função já foi declarada no escopo global
+        if (buscarSimbolo($2, 0)) {
+          fprintf(stderr, "Erro: função '%s' já foi declarada (linha %d)\n", $2, num_linha);
+          exit(1);
+        }
+        // Inserir função no escopo global
+        inserirSimbolo($2, TIPO_FUNC, 0); 
+        // Abrir novo escopo para variáveis locais da função
+        abrir_escopo();
+      } 
+      lista_comandos
+      {
         $$ = criar_funcao($2, NULL, $7);
-    }
+        // Fechar escopo da função
+        fechar_escopo();
+      }
     ;
 
+chamada_funcao
+    : IDENTIFICADOR ABRE_PAR FECHA_PAR
+      {
+        if (!buscarSimbolo($1, 0)) {
+          fprintf(stderr, "Erro: função '%s' não declarada (linha %d)\n", $1, num_linha);
+          exit(1);
+        }
+        $$ = criar_chamada_funcao($1, NULL); // NULL para argumentos, se não houver
+      }
+    ;
+    
 expressao
     : expressao SOMA expressao      { $$ = criar_aritmetico(OP_MAIS, $1, $3); }
     | expressao SUBTRACAO expressao { $$ = criar_aritmetico(OP_MENOS, $1, $3); }
@@ -325,11 +349,13 @@ expressao
             adicionar_erro(erro);
         }
         $$ = criar_identificador($1);
-    }
-    | ABRE_PAR expressao FECHA_PAR { $$ = $2; }
+      }
+    | ABRE_PAR expressao FECHA_PAR
+      { $$ = $2; }
     ;
 
 %%
+
 void yyerror(const char *s) {
     char erro[256];
     // Mensagens de erro específicas

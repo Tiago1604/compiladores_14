@@ -72,6 +72,12 @@ No *criar_identificador(char *nome) {
     return no;
 }
 
+No *criar_chamada_funcao(char *nome, No *args) {
+    No *no = criar_no(NO_CHAMADA_FUNCAO, args, NULL);
+    no->valor.sval = strdup(nome);
+    return no;
+}
+
 // Função auxiliar para obter o símbolo da operação
 const char *obter_string_op(enum TipoOp op) {
     switch (op) {
@@ -105,7 +111,7 @@ static struct ListaVar *buscar_var(struct ListaVar *vars, const char *nome) {
     return NULL;
 }
 
-// Função para determinar se um nó é flutuante
+// Função para determinar se um nó é float
 static bool eh_no_flutuante(No *no) {
     if (!no) return false;
     if (no->tipo == NO_FLUTUANTE) return true;
@@ -120,7 +126,8 @@ static bool eh_no_flutuante(No *no) {
     return false;
 }
 
-// Função auxiliar para adicionar variável à lista
+
+// Função auxiliar para adicionar variável à lista, promovendo para float se necessário
 void adicionar_var(struct ListaVar **vars, const char *nome, bool eh_flutuante) {
     struct ListaVar *v = buscar_var(*vars, nome);
     if (v) {
@@ -178,20 +185,158 @@ void imprimir_decl_vars(struct ListaVar *vars, FILE *saida) {
     }
 }
 
-// Função principal de geração de código C
+// Função para extrair comandos globais da AST (comandos que não estão dentro de funções)
+void extrair_comandos_globais(No *no, No **comandos_globais, No **definicoes_funcoes) {
+    if (!no) return;
+    
+    if (no->tipo == NO_LISTA_COMANDOS) {
+        extrair_comandos_globais(no->esquerda, comandos_globais, definicoes_funcoes);
+        extrair_comandos_globais(no->direita, comandos_globais, definicoes_funcoes);
+    } else if (no->tipo == NO_DEF_FUNCAO) {
+        // Esta é uma definição de função - adiciona à lista de definições
+        No *novo_def = malloc(sizeof(No));
+        *novo_def = *no;
+        novo_def->esquerda = NULL;
+        novo_def->direita = NULL;
+        
+        // Extrair apenas o corpo da função (sem comandos globais misturados)
+        extrair_corpo_funcao(no->direita, &(novo_def->direita));
+        
+        // Adicionar à lista de definições
+        if (!*definicoes_funcoes) {
+            *definicoes_funcoes = criar_no(NO_LISTA_COMANDOS, novo_def, NULL);
+        } else {
+            No *temp = *definicoes_funcoes;
+            while (temp->direita) temp = temp->direita;
+            temp->direita = criar_no(NO_LISTA_COMANDOS, novo_def, NULL);
+        }
+        
+        // Extrair comandos globais que podem estar misturados no corpo
+        extrair_comandos_globais_do_corpo(no->direita, comandos_globais);
+    } else {
+        // Comando global (não é definição de função)
+        if (!*comandos_globais) {
+            *comandos_globais = criar_no(NO_LISTA_COMANDOS, no, NULL);
+        } else {
+            No *temp = *comandos_globais;
+            while (temp->direita) temp = temp->direita;
+            temp->direita = criar_no(NO_LISTA_COMANDOS, no, NULL);
+        }
+    }
+}
+
+// Função para extrair apenas o corpo da função (comandos dentro da função)
+void extrair_corpo_funcao(No *no, No **corpo) {
+    if (!no) return;
+    
+    if (no->tipo == NO_LISTA_COMANDOS) {
+        extrair_corpo_funcao(no->esquerda, corpo);
+        // Para o corpo da função, só incluímos comandos que não são chamadas de função
+        if (no->direita && no->direita->tipo != NO_CHAMADA_FUNCAO) {
+            extrair_corpo_funcao(no->direita, corpo);
+        }
+    } else if (no->tipo != NO_CHAMADA_FUNCAO) {
+        // Adicionar comando ao corpo da função (exceto chamadas de função)
+        if (!*corpo) {
+            *corpo = criar_no(NO_LISTA_COMANDOS, no, NULL);
+        } else {
+            No *temp = *corpo;
+            while (temp->direita) temp = temp->direita;
+            temp->direita = criar_no(NO_LISTA_COMANDOS, no, NULL);
+        }
+    }
+}
+
+// Função para extrair comandos globais que estão misturados no corpo da função
+void extrair_comandos_globais_do_corpo(No *no, No **comandos_globais) {
+    if (!no) return;
+    
+    if (no->tipo == NO_LISTA_COMANDOS) {
+        extrair_comandos_globais_do_corpo(no->esquerda, comandos_globais);
+        extrair_comandos_globais_do_corpo(no->direita, comandos_globais);
+    } else if (no->tipo == NO_CHAMADA_FUNCAO) {
+        // Esta é uma chamada de função que deveria estar no main
+        if (!*comandos_globais) {
+            *comandos_globais = criar_no(NO_LISTA_COMANDOS, no, NULL);
+        } else {
+            No *temp = *comandos_globais;
+            while (temp->direita) temp = temp->direita;
+            temp->direita = criar_no(NO_LISTA_COMANDOS, no, NULL);
+        }
+    }
+}
+
+// Função para gerar código C a partir da AST
+// Esta função percorre a AST e gera o código C correspondente
+void gerar_funcoes(No *no, FILE *saida) {
+    if (!no) return;
+
+    if (no->tipo == NO_LISTA_COMANDOS) {
+        gerar_funcoes(no->esquerda, saida);
+        gerar_funcoes(no->direita, saida);
+    } else if (no->tipo == NO_DEF_FUNCAO) {
+        // Cabeçalho da função
+        fprintf(saida, "void %s() {\n", no->valor.sval);
+
+        // 1) Coletar e declarar variáveis locais, com 1 nível de indentação (4 espaços)
+        struct ListaVar *vars = NULL;
+        coletar_vars(no->direita, &vars);
+        for (struct ListaVar *cur = vars; cur; cur = cur->prox) {
+            fprintf(saida, "    %s %s;\n",
+                    cur->eh_flutuante ? "float" : "int",
+                    cur->nome);
+        }
+
+        // 2) Gerar o corpo da função, também com indentação de 1 nível
+        gerar_codigo_c_interno(no->direita, saida, 1);
+
+        // 3) Liberar a lista de variáveis
+        while (vars) {
+            struct ListaVar *tmp = vars;
+            vars = vars->prox;
+            free(tmp);
+        }
+
+        // Fecha a função
+        fprintf(saida, "}\n\n");
+    }
+}
+
+// Função principal para gerar código C a partir da AST
 void gerar_codigo_c(No *no, FILE *saida) {
+    static bool header_printed = false;
     struct ListaVar *vars = NULL;
-    coletar_vars(no, &vars);
+    No *comandos_globais = NULL;
+    No *definicoes_funcoes = NULL;
+
+    // imprime o include apenas na primeira vez
+    if (!header_printed) {
+        fprintf(saida, "#include <stdio.h>\n\n");
+        header_printed = true;
+    }
+
+    // Separar comandos globais das definições de função
+    extrair_comandos_globais(no, &comandos_globais, &definicoes_funcoes);
+
+    // Primeiro: gerar as funções
+    if (definicoes_funcoes) {
+        gerar_funcoes(definicoes_funcoes, saida);
+    }
+
+    // Agora o main - coletar vars apenas dos comandos globais
+    coletar_vars(comandos_globais, &vars);
     fprintf(saida, "int main() {\n");
     imprimir_decl_vars(vars, saida);
-    gerar_codigo_c_interno(no, saida, 1);
+    gerar_codigo_c_interno(comandos_globais, saida, 1);
     fprintf(saida, "    return 0;\n}\n");
+
     while (vars) {
         struct ListaVar *tmp = vars;
         vars = vars->prox;
         free(tmp);
     }
 }
+
 
 // Função recursiva auxiliar para geração de código C com indentação
 void gerar_codigo_c_interno(No *no, FILE *saida, int indent) {
@@ -200,6 +345,9 @@ void gerar_codigo_c_interno(No *no, FILE *saida, int indent) {
     memset(ind, ' ', indent * 4);
     ind[indent * 4] = '\0';
     switch (no->tipo) {
+        case NO_DEF_FUNCAO:
+            // Ignorar: as funções já foram geradas antes do main
+            break;
         case NO_LISTA_COMANDOS:
             gerar_codigo_c_interno(no->esquerda, saida, indent);
             if (no->direita) gerar_codigo_c_interno(no->direita, saida, indent);
@@ -256,6 +404,11 @@ void gerar_codigo_c_interno(No *no, FILE *saida, int indent) {
         case NO_IDENTIFICADOR:
             fprintf(saida, "%s", no->valor.sval);
             break;
+        case NO_CHAMADA_FUNCAO:
+            fprintf(saida, "%s%s(", ind, no->valor.sval);
+            // Por enquanto, assumimos que não há argumentos
+            fprintf(saida, ");\n");
+            break;
         default:
             break;
     }
@@ -287,6 +440,11 @@ void imprimirAST(No *no, int nivel) {
             printf("FOR var=%s\n", no->valor.sval);
             imprimirAST(no->esquerda, nivel + 1);    // alcance
             imprimirAST(no->direita, nivel + 1);   // corpo
+            break;
+        case NO_DEF_FUNCAO:
+            printf("DEF %s\n", no->valor.sval);
+            imprimirAST(no->esquerda, nivel + 1);    // range
+            imprimirAST(no->direita, nivel + 1);
             break;
         case NO_PRINT:
             printf("PRINT\n");
