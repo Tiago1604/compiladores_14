@@ -3,7 +3,7 @@
 # Caminhos dos testes e saídas
 TEST_DIR="tests"
 SAIDA_DIR="saida"
-COMPILADOR="build/compiler"
+COMPILADOR="build/compilador"
 
 # Garante que o diretório de saída existe
 mkdir -p "$SAIDA_DIR"

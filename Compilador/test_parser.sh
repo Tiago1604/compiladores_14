@@ -1,6 +1,6 @@
 #!/bin/bash
 
-COMPILADOR="./build/compiler"
+COMPILADOR="./build/compilador"
 TEST_DIR="tests"
 SAIDA_DIR="saida"
 mkdir -p "$SAIDA_DIR"
