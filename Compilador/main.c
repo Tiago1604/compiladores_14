@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "ast.h"
 
 // Declaração de variáveis externas
@@ -11,7 +12,16 @@ No *raiz;
 int main(int argc, char **argv) {
     // Verifica se o número de argumentos está correto
     if (argc != 3) {
-        fprintf(stderr, "Uso: %s arquivo_entrada arquivo_saida\n", argv[0]);
+        fprintf(stderr, "Uso: %s arquivo_entrada[.py|.txt] arquivo_saida.c\n", argv[0]);
+        exit(1);
+    }
+
+    // Verifica se o arquivo de entrada tem extensão .py ou .txt
+    const char *entrada = argv[1];
+    int len = strlen(entrada);
+    if (len < 4 || (strcmp(entrada + len - 3, ".py") != 0 && 
+                    strcmp(entrada + len - 4, ".txt") != 0)) {
+        fprintf(stderr, "Erro: O arquivo de entrada deve ter extensão .py ou .txt\n");
         exit(1);
     }
 
