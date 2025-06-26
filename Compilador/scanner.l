@@ -8,6 +8,7 @@
 #define YY_NO_UNPUT
 
 int num_linha = 1;
+extern void adicionar_erro(const char *mensagem);
 %}
 
 %%
@@ -43,11 +44,15 @@ int num_linha = 1;
 
 [ \t]+                 ; /* ignora espaços em branco */
 [\n]                   { num_linha++; }
-#.*                    ; /* ignora comentários */
-.                      { printf("Caractere inválido: %s\n", yytext); }
+#.*    { adicionar_erro("Comentário não permitido nesta linguagem"); }
+.                      { 
+    char erro[256];
+    snprintf(erro, sizeof(erro), "Caractere inválido: '%s'", yytext);
+    adicionar_erro(erro);
+}
 
 %%
 
 int yywrap(void) {
     return 1;
-} 
+}

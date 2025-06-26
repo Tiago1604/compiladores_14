@@ -60,7 +60,7 @@ Essa estrutura foi projetada para organizar o projeto de forma clara, separando 
     ou
     ```
     make
-    ./build/compiler arquivo_entrada.txt arquivo_saida.c
+    make PyToC arquivo_entrada.txt arquivo_saida.c
     ```
 ## Ajustes e Melhorias
 

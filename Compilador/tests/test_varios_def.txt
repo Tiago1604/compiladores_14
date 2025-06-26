@@ -3,3 +3,6 @@ def funcao1():
 
 def funcao2():
     y = 20
+
+def funcao3():
+    z = 30

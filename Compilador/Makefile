@@ -6,7 +6,7 @@ OBJ=build/parser.tab.o build/lex.yy.o build/ast.o build/main.o build/tabela.o
 build/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-build/compiler: $(OBJ)
+build/compilador: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS)
 
 build/lex.yy.c: scanner.l
@@ -21,11 +21,19 @@ build/tabela.o: tabela.c tabela.h
 	$(CC) -c -o build/tabela.o tabela.c -Wall -I.
 
 clean:
-	rm -f build/*.o build/parser.tab.c build/parser.tab.h build/lex.yy.c build/compiler
+	rm -f build/*.o build/parser.tab.c build/parser.tab.h build/lex.yy.c build/compilador
 
 # Testes automáticos
 
-test: build/compiler
+test: build/compilador
 	@bash test_runner.sh
 
-.PHONY: clean test 
+# Compilação de Python para C
+PyToC: build/compilador
+	./build/compilador $(word 2,$(MAKECMDGOALS)) $(word 3,$(MAKECMDGOALS))
+
+# Regra para ignorar argumentos desconhecidos
+%:
+	@:
+
+.PHONY: clean test PyToC 

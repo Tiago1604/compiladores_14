@@ -77,6 +77,7 @@ void coletar_vars(No *no, struct ListaVar **vars);
 void extrair_comandos_globais(No *no, No **comandos_globais, No **definicoes_funcoes);
 void extrair_corpo_funcao(No *no, No **corpo);
 void extrair_comandos_globais_do_corpo(No *no, No **comandos_globais);
+void extrair_funcoes_aninhadas(No *no, No **comandos_globais, No **definicoes_funcoes);
 
 // Função para imprimir a AST
 void imprimirAST(No *no, int nivel);

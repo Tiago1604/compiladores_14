@@ -8,7 +8,51 @@
 extern int yylex();
 extern int num_linha;
 void yyerror(const char *s);
-int escopo_atual = 0;   /* escopo global */
+// Variável global para escopo (pode ser expandida depois)
+int escopo_atual = 0;
+
+// Estrutura para gerenciar erros
+typedef struct {
+    int tem_erro;
+    int num_erros;
+    char mensagens[100][256];  // Array para armazenar até 100 mensagens de erro
+} GerenciadorErros;
+
+GerenciadorErros gerenciador_erros = {0, 0};
+
+// Função para verificar se houve erros
+int tem_erro() {
+    return gerenciador_erros.tem_erro;
+}
+
+// Função para adicionar erro
+void adicionar_erro(const char *mensagem) {
+    if (gerenciador_erros.num_erros < 100) {
+        snprintf(gerenciador_erros.mensagens[gerenciador_erros.num_erros], 
+                256, "Linha %d: %s", num_linha, mensagem);
+        gerenciador_erros.num_erros++;
+        gerenciador_erros.tem_erro = 1;
+    }
+}
+
+// Função auxiliar para verificar operandos de função em comparações
+void verificar_operandos_funcao(No *op1, No *op2) {
+    Simbolo *s1 = NULL;
+    Simbolo *s2 = NULL;
+    if (op1->tipo == NO_IDENTIFICADOR) {
+        s1 = buscarSimbolo(op1->valor.sval, escopo_atual);
+    }
+    if (op2->tipo == NO_IDENTIFICADOR) {
+        s2 = buscarSimbolo(op2->valor.sval, escopo_atual);
+    }
+    
+    if ((s1 && s1->tipo == TIPO_FUNC) || (s2 && s2->tipo == TIPO_FUNC)) {
+        char erro[256];
+        const char *func_name = s1 && s1->tipo == TIPO_FUNC ? op1->valor.sval : op2->valor.sval;
+        snprintf(erro, sizeof(erro), "Erro de tipo: tentativa de comparar a função '%s' com um valor", func_name);
+        adicionar_erro(erro);
+    }
+}
 %}
 
 %union {
@@ -27,6 +71,7 @@ int escopo_atual = 0;   /* escopo global */
 %token ATRIBUICAO IGUAL DIFERENTE MENOR MAIOR MENOR_IGUAL MAIOR_IGUAL
 %token ABRE_PAR FECHA_PAR DOIS_PONTOS
 
+
 /* não usar "\" aqui: */
 %type <arvore> programa
 %type <arvore> lista_comandos
@@ -40,26 +85,69 @@ int escopo_atual = 0;   /* escopo global */
 %type <arvore> expressao
 %type <arvore> comando_while
 
-/* precedências */
+
+%define parse.error verbose
+
+// Definição de precedência e associatividade
 %left IGUAL DIFERENTE MENOR MAIOR MENOR_IGUAL MAIOR_IGUAL
 %left SOMA SUBTRACAO
 %left MULTIPLICACAO DIVISAO
+%nonassoc THEN
+%nonassoc ELSE
 
 %%
 
 programa
-    : lista_comandos 
-      { raiz = $1;
-        printf("Tabela de Simbolos:\n"); imprimirTabela();
-        printf("\nAST:\n"); imprimirAST(raiz, 0);
-      }
+    : lista_comandos { 
+        if ($1 == NULL) { adicionar_erro("Erro de sintaxe no programa"); raiz = NULL;
+        } else {
+            raiz = $1;
+        }
+        
+        // Imprime erros se houver
+        if (gerenciador_erros.tem_erro) {
+            printf("\nErros encontrados:\n");
+            for (int i = 0; i < gerenciador_erros.num_erros; i++) {
+                printf("%s\n", gerenciador_erros.mensagens[i]);
+            }
+            printf("\n");
+        }
+        
+        printf("Tabela de Simbolos:\n"); 
+        imprimirTabela(); 
+        if (raiz != NULL) {
+            printf("\nAST:\n"); 
+            imprimirAST(raiz, 0);
+        }
+    }
+    | error { 
+        adicionar_erro("Erro de sintaxe no programa");
+        raiz = NULL;
+        yyerrok; 
+    }
     ;
 
 lista_comandos
-    : comando
-      { $$ = criar_no(NO_LISTA_COMANDOS, $1, NULL); }
-    | lista_comandos comando
-      { $$ = criar_no(NO_LISTA_COMANDOS, $1, $2); }
+    : comando { 
+        if ($1 == NULL) {
+            $$ = NULL;
+        } else {
+            $$ = criar_no(NO_LISTA_COMANDOS, $1, NULL);
+        }
+    }
+    | lista_comandos comando { 
+        if ($1 == NULL || $2 == NULL) {
+            $$ = NULL;
+        } else {
+            // Criar uma lista linear, não aninhada
+            No *ultimo = $1;
+            while (ultimo->direita != NULL) {
+                ultimo = ultimo->direita;
+            }
+            ultimo->direita = criar_no(NO_LISTA_COMANDOS, $2, NULL);
+            $$ = $1;
+        }
+    }
     ;
 
 comando
@@ -70,13 +158,40 @@ comando
     | atribuicao
     | comando_def
     | chamada_funcao
+    | error { 
+        adicionar_erro("Erro de sintaxe no comando");
+        $$ = NULL;
+        yyerrok;
+    }
     ;
 
 comando_if
-    : IF expressao DOIS_PONTOS lista_comandos
-      { $$ = criar_if($2, $4, NULL); }
+    : IF expressao DOIS_PONTOS lista_comandos %prec THEN
+        { 
+            if ($2 == NULL || $4 == NULL) {
+                $$ = NULL;
+            } else {
+                $$ = criar_if($2, $4, NULL);
+            }
+        }
     | IF expressao DOIS_PONTOS lista_comandos ELSE DOIS_PONTOS lista_comandos
-      { $$ = criar_if($2, $4, $7); }
+        { 
+            if ($2 == NULL || $4 == NULL || $7 == NULL) {
+                $$ = NULL;
+            } else {
+                $$ = criar_if($2, $4, $7);
+            }
+        }
+    | IF expressao DOIS_PONTOS lista_comandos ELSE error {
+            adicionar_erro("Erro de sintaxe: faltando ':' após 'else'");
+            $$ = NULL;
+            yyerrok;
+        }
+    | IF error {
+            adicionar_erro("Erro na expressão de condição do if");
+            $$ = NULL;
+            yyerrok;
+        }
     ;
 
 comando_for
@@ -151,35 +266,42 @@ chamada_funcao
     ;
     
 expressao
-    : expressao SOMA expressao
-      { $$ = criar_aritmetico(OP_MAIS, $1, $3); }
-    | expressao SUBTRACAO expressao
-      { $$ = criar_aritmetico(OP_MENOS, $1, $3); }
-    | expressao MULTIPLICACAO expressao
-      { $$ = criar_aritmetico(OP_VEZES, $1, $3); }
-    | expressao DIVISAO expressao
-      { $$ = criar_aritmetico(OP_DIVIDE, $1, $3); }
-    | expressao IGUAL expressao
-      { $$ = criar_comparacao(OP_IGUAL, $1, $3); }
-    | expressao DIFERENTE expressao
-      { $$ = criar_comparacao(OP_DIFERENTE, $1, $3); }
-    | expressao MENOR expressao
-      { $$ = criar_comparacao(OP_MENOR, $1, $3); }
-    | expressao MAIOR expressao
-      { $$ = criar_comparacao(OP_MAIOR, $1, $3); }
-    | expressao MENOR_IGUAL expressao
-      { $$ = criar_comparacao(OP_MENOR_IGUAL, $1, $3); }
-    | expressao MAIOR_IGUAL expressao
-      { $$ = criar_comparacao(OP_MAIOR_IGUAL, $1, $3); }
-    | INTEIRO
-      { $$ = criar_numero($1); }
-    | FLUTUANTE
-      { $$ = criar_flutuante($1); }
-    | IDENTIFICADOR
-      {
+    : expressao SOMA expressao      { $$ = criar_aritmetico(OP_MAIS, $1, $3); }
+    | expressao SUBTRACAO expressao { $$ = criar_aritmetico(OP_MENOS, $1, $3); }
+    | expressao MULTIPLICACAO expressao { $$ = criar_aritmetico(OP_VEZES, $1, $3); }
+    | expressao DIVISAO expressao   { $$ = criar_aritmetico(OP_DIVIDE, $1, $3); }
+    | expressao IGUAL expressao     { 
+        verificar_operandos_funcao($1, $3);
+        $$ = criar_comparacao(OP_IGUAL, $1, $3); 
+    }
+    | expressao DIFERENTE expressao { 
+        verificar_operandos_funcao($1, $3);
+        $$ = criar_comparacao(OP_DIFERENTE, $1, $3); 
+    }
+    | expressao MENOR expressao     { 
+        verificar_operandos_funcao($1, $3);
+        $$ = criar_comparacao(OP_MENOR, $1, $3); 
+    }
+    | expressao MAIOR expressao     { 
+        verificar_operandos_funcao($1, $3);
+        $$ = criar_comparacao(OP_MAIOR, $1, $3); 
+    }
+    | expressao MENOR_IGUAL expressao { 
+        verificar_operandos_funcao($1, $3);
+        $$ = criar_comparacao(OP_MENOR_IGUAL, $1, $3); 
+    }
+    | expressao MAIOR_IGUAL expressao { 
+        verificar_operandos_funcao($1, $3);
+        $$ = criar_comparacao(OP_MAIOR_IGUAL, $1, $3); 
+    }
+    | INTEIRO                      { $$ = criar_numero($1); }
+    | FLUTUANTE                    { $$ = criar_flutuante($1); }
+    | IDENTIFICADOR                {
+        // Verifica se a variável foi declarada
         if (!buscarSimbolo($1, escopo_atual)) {
-          fprintf(stderr, "Erro: '%s' não declarada (linha %d)\n", $1, num_linha);
-          exit(1);
+            char erro[256];
+            snprintf(erro, sizeof(erro), "Variável '%s' não declarada", $1);
+            adicionar_erro(erro);
         }
         $$ = criar_identificador($1);
       }
@@ -190,6 +312,12 @@ expressao
 %%
 
 void yyerror(const char *s) {
-    fprintf(stderr, "Erro na linha %d: %s\n", num_linha, s);
-    exit(1);
+    char erro[256];
+    // Mensagens de erro específicas
+    if (strstr(s, "expecting DOIS_PONTOS")) {
+        snprintf(erro, sizeof(erro), "Erro de sintaxe: faltando ':' após a palavra-chave");
+    } else {
+        snprintf(erro, sizeof(erro), "Erro de sintaxe: %s", s);
+    }
+    adicionar_erro(erro);
 }
