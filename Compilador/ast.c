@@ -211,8 +211,8 @@ void extrair_comandos_globais(No *no, No **comandos_globais, No **definicoes_fun
             temp->direita = criar_no(NO_LISTA_COMANDOS, novo_def, NULL);
         }
         
-        // Extrair comandos globais que podem estar misturados no corpo
-        extrair_comandos_globais_do_corpo(no->direita, comandos_globais);
+        // CORREÇÃO: Extrair funções aninhadas incorretamente e outras definições globais
+        extrair_funcoes_aninhadas(no->direita, comandos_globais, definicoes_funcoes);
     } else {
         // Comando global (não é definição de função)
         if (!*comandos_globais) {
@@ -231,12 +231,12 @@ void extrair_corpo_funcao(No *no, No **corpo) {
     
     if (no->tipo == NO_LISTA_COMANDOS) {
         extrair_corpo_funcao(no->esquerda, corpo);
-        // Para o corpo da função, só incluímos comandos que não são chamadas de função
-        if (no->direita && no->direita->tipo != NO_CHAMADA_FUNCAO) {
+        // Para o corpo da função, só incluímos comandos que não são funções ou chamadas de função
+        if (no->direita && no->direita->tipo != NO_CHAMADA_FUNCAO && no->direita->tipo != NO_DEF_FUNCAO) {
             extrair_corpo_funcao(no->direita, corpo);
         }
-    } else if (no->tipo != NO_CHAMADA_FUNCAO) {
-        // Adicionar comando ao corpo da função (exceto chamadas de função)
+    } else if (no->tipo != NO_CHAMADA_FUNCAO && no->tipo != NO_DEF_FUNCAO) {
+        // Adicionar comando ao corpo da função (exceto chamadas e definições de função)
         if (!*corpo) {
             *corpo = criar_no(NO_LISTA_COMANDOS, no, NULL);
         } else {
@@ -254,6 +254,46 @@ void extrair_comandos_globais_do_corpo(No *no, No **comandos_globais) {
     if (no->tipo == NO_LISTA_COMANDOS) {
         extrair_comandos_globais_do_corpo(no->esquerda, comandos_globais);
         extrair_comandos_globais_do_corpo(no->direita, comandos_globais);
+    } else if (no->tipo == NO_CHAMADA_FUNCAO) {
+        // Esta é uma chamada de função que deveria estar no main
+        if (!*comandos_globais) {
+            *comandos_globais = criar_no(NO_LISTA_COMANDOS, no, NULL);
+        } else {
+            No *temp = *comandos_globais;
+            while (temp->direita) temp = temp->direita;
+            temp->direita = criar_no(NO_LISTA_COMANDOS, no, NULL);
+        }
+    }
+}
+
+// Nova função para extrair funções que foram aninhadas incorretamente
+void extrair_funcoes_aninhadas(No *no, No **comandos_globais, No **definicoes_funcoes) {
+    if (!no) return;
+    
+    if (no->tipo == NO_LISTA_COMANDOS) {
+        extrair_funcoes_aninhadas(no->esquerda, comandos_globais, definicoes_funcoes);
+        extrair_funcoes_aninhadas(no->direita, comandos_globais, definicoes_funcoes);
+    } else if (no->tipo == NO_DEF_FUNCAO) {
+        // Esta é uma função aninhada incorretamente - mover para o nível global
+        No *novo_def = malloc(sizeof(No));
+        *novo_def = *no;
+        novo_def->esquerda = NULL;
+        novo_def->direita = NULL;
+        
+        // Extrair apenas o corpo da função
+        extrair_corpo_funcao(no->direita, &(novo_def->direita));
+        
+        // Adicionar à lista de definições globais
+        if (!*definicoes_funcoes) {
+            *definicoes_funcoes = criar_no(NO_LISTA_COMANDOS, novo_def, NULL);
+        } else {
+            No *temp = *definicoes_funcoes;
+            while (temp->direita) temp = temp->direita;
+            temp->direita = criar_no(NO_LISTA_COMANDOS, novo_def, NULL);
+        }
+        
+        // Recursivamente processar o corpo desta função também
+        extrair_funcoes_aninhadas(no->direita, comandos_globais, definicoes_funcoes);
     } else if (no->tipo == NO_CHAMADA_FUNCAO) {
         // Esta é uma chamada de função que deveria estar no main
         if (!*comandos_globais) {

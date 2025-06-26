@@ -129,7 +129,13 @@ lista_comandos
         if ($1 == NULL || $2 == NULL) {
             $$ = NULL;
         } else {
-            $$ = criar_no(NO_LISTA_COMANDOS, $1, $2);
+            // Criar uma lista linear, não aninhada
+            No *ultimo = $1;
+            while (ultimo->direita != NULL) {
+                ultimo = ultimo->direita;
+            }
+            ultimo->direita = criar_no(NO_LISTA_COMANDOS, $2, NULL);
+            $$ = $1;
         }
     }
     ;
