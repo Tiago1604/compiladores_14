@@ -7,8 +7,6 @@
 
 extern int escopo_atual;    // capturar o escopo global declarado no parser.c
 
-#define TAM 211
-
 /* Incrementa o escopo atual */
 void abrir_escopo() {
     escopo_atual++;

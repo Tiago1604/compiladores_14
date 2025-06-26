@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <string.h>
 #include "ast.h"
 #include "tabela.h"
 
@@ -33,6 +32,25 @@ void adicionar_erro(const char *mensagem) {
                 256, "Linha %d: %s", num_linha, mensagem);
         gerenciador_erros.num_erros++;
         gerenciador_erros.tem_erro = 1;
+    }
+}
+
+// Função auxiliar para verificar operandos de função em comparações
+void verificar_operandos_funcao(No *op1, No *op2) {
+    Simbolo *s1 = NULL;
+    Simbolo *s2 = NULL;
+    if (op1->tipo == NO_IDENTIFICADOR) {
+        s1 = buscarSimbolo(op1->valor.sval, escopo_atual);
+    }
+    if (op2->tipo == NO_IDENTIFICADOR) {
+        s2 = buscarSimbolo(op2->valor.sval, escopo_atual);
+    }
+    
+    if ((s1 && s1->tipo == TIPO_FUNC) || (s2 && s2->tipo == TIPO_FUNC)) {
+        char erro[256];
+        const char *func_name = s1 && s1->tipo == TIPO_FUNC ? op1->valor.sval : op2->valor.sval;
+        snprintf(erro, sizeof(erro), "Erro de tipo: tentativa de comparar a função '%s' com um valor", func_name);
+        adicionar_erro(erro);
     }
 }
 %}
@@ -223,117 +241,27 @@ expressao
     | expressao MULTIPLICACAO expressao { $$ = criar_aritmetico(OP_VEZES, $1, $3); }
     | expressao DIVISAO expressao   { $$ = criar_aritmetico(OP_DIVIDE, $1, $3); }
     | expressao IGUAL expressao     { 
-        // Verifica se algum dos operandos é uma função
-        Simbolo *s1 = NULL;
-        Simbolo *s2 = NULL;
-        if ($1->tipo == NO_IDENTIFICADOR) {
-            s1 = buscarSimbolo($1->valor.sval, escopo_atual);
-        }
-        if ($3->tipo == NO_IDENTIFICADOR) {
-            s2 = buscarSimbolo($3->valor.sval, escopo_atual);
-        }
-        
-        if ((s1 && s1->tipo == TIPO_FUNC) || (s2 && s2->tipo == TIPO_FUNC)) {
-            char erro[256];
-            const char *func_name = s1 && s1->tipo == TIPO_FUNC ? $1->valor.sval : $3->valor.sval;
-            snprintf(erro, sizeof(erro), "Erro de tipo: tentativa de comparar a função '%s' com um valor", func_name);
-            adicionar_erro(erro);
-        }
+        verificar_operandos_funcao($1, $3);
         $$ = criar_comparacao(OP_IGUAL, $1, $3); 
     }
     | expressao DIFERENTE expressao { 
-        // Verifica se algum dos operandos é uma função
-        Simbolo *s1 = NULL;
-        Simbolo *s2 = NULL;
-        if ($1->tipo == NO_IDENTIFICADOR) {
-            s1 = buscarSimbolo($1->valor.sval, escopo_atual);
-        }
-        if ($3->tipo == NO_IDENTIFICADOR) {
-            s2 = buscarSimbolo($3->valor.sval, escopo_atual);
-        }
-        
-        if ((s1 && s1->tipo == TIPO_FUNC) || (s2 && s2->tipo == TIPO_FUNC)) {
-            char erro[256];
-            const char *func_name = s1 && s1->tipo == TIPO_FUNC ? $1->valor.sval : $3->valor.sval;
-            snprintf(erro, sizeof(erro), "Erro de tipo: tentativa de comparar a função '%s' com um valor", func_name);
-            adicionar_erro(erro);
-        }
+        verificar_operandos_funcao($1, $3);
         $$ = criar_comparacao(OP_DIFERENTE, $1, $3); 
     }
     | expressao MENOR expressao     { 
-        // Verifica se algum dos operandos é uma função
-        Simbolo *s1 = NULL;
-        Simbolo *s2 = NULL;
-        if ($1->tipo == NO_IDENTIFICADOR) {
-            s1 = buscarSimbolo($1->valor.sval, escopo_atual);
-        }
-        if ($3->tipo == NO_IDENTIFICADOR) {
-            s2 = buscarSimbolo($3->valor.sval, escopo_atual);
-        }
-        
-        if ((s1 && s1->tipo == TIPO_FUNC) || (s2 && s2->tipo == TIPO_FUNC)) {
-            char erro[256];
-            const char *func_name = s1 && s1->tipo == TIPO_FUNC ? $1->valor.sval : $3->valor.sval;
-            snprintf(erro, sizeof(erro), "Erro de tipo: tentativa de comparar a função '%s' com um valor", func_name);
-            adicionar_erro(erro);
-        }
+        verificar_operandos_funcao($1, $3);
         $$ = criar_comparacao(OP_MENOR, $1, $3); 
     }
     | expressao MAIOR expressao     { 
-        // Verifica se algum dos operandos é uma função
-        Simbolo *s1 = NULL;
-        Simbolo *s2 = NULL;
-        if ($1->tipo == NO_IDENTIFICADOR) {
-            s1 = buscarSimbolo($1->valor.sval, escopo_atual);
-        }
-        if ($3->tipo == NO_IDENTIFICADOR) {
-            s2 = buscarSimbolo($3->valor.sval, escopo_atual);
-        }
-        
-        if ((s1 && s1->tipo == TIPO_FUNC) || (s2 && s2->tipo == TIPO_FUNC)) {
-            char erro[256];
-            const char *func_name = s1 && s1->tipo == TIPO_FUNC ? $1->valor.sval : $3->valor.sval;
-            snprintf(erro, sizeof(erro), "Erro de tipo: tentativa de comparar a função '%s' com um valor", func_name);
-            adicionar_erro(erro);
-        }
+        verificar_operandos_funcao($1, $3);
         $$ = criar_comparacao(OP_MAIOR, $1, $3); 
     }
     | expressao MENOR_IGUAL expressao { 
-        // Verifica se algum dos operandos é uma função
-        Simbolo *s1 = NULL;
-        Simbolo *s2 = NULL;
-        if ($1->tipo == NO_IDENTIFICADOR) {
-            s1 = buscarSimbolo($1->valor.sval, escopo_atual);
-        }
-        if ($3->tipo == NO_IDENTIFICADOR) {
-            s2 = buscarSimbolo($3->valor.sval, escopo_atual);
-        }
-        
-        if ((s1 && s1->tipo == TIPO_FUNC) || (s2 && s2->tipo == TIPO_FUNC)) {
-            char erro[256];
-            const char *func_name = s1 && s1->tipo == TIPO_FUNC ? $1->valor.sval : $3->valor.sval;
-            snprintf(erro, sizeof(erro), "Erro de tipo: tentativa de comparar a função '%s' com um valor", func_name);
-            adicionar_erro(erro);
-        }
+        verificar_operandos_funcao($1, $3);
         $$ = criar_comparacao(OP_MENOR_IGUAL, $1, $3); 
     }
     | expressao MAIOR_IGUAL expressao { 
-        // Verifica se algum dos operandos é uma função
-        Simbolo *s1 = NULL;
-        Simbolo *s2 = NULL;
-        if ($1->tipo == NO_IDENTIFICADOR) {
-            s1 = buscarSimbolo($1->valor.sval, escopo_atual);
-        }
-        if ($3->tipo == NO_IDENTIFICADOR) {
-            s2 = buscarSimbolo($3->valor.sval, escopo_atual);
-        }
-        
-        if ((s1 && s1->tipo == TIPO_FUNC) || (s2 && s2->tipo == TIPO_FUNC)) {
-            char erro[256];
-            const char *func_name = s1 && s1->tipo == TIPO_FUNC ? $1->valor.sval : $3->valor.sval;
-            snprintf(erro, sizeof(erro), "Erro de tipo: tentativa de comparar a função '%s' com um valor", func_name);
-            adicionar_erro(erro);
-        }
+        verificar_operandos_funcao($1, $3);
         $$ = criar_comparacao(OP_MAIOR_IGUAL, $1, $3); 
     }
     | INTEIRO                      { $$ = criar_numero($1); }
