@@ -16,6 +16,7 @@ extern void adicionar_erro(const char *mensagem);
 "if"            { return IF; }
 "else"          { return ELSE; }
 "for"           { return FOR; }
+"while"         { return WHILE; } 
 "in"            { return IN; }
 "range"         { return RANGE; }
 "print"         { return PRINT; }

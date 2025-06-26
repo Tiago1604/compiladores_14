@@ -11,6 +11,7 @@ enum TipoNo {
     NO_DEF_FUNCAO,
     NO_IF,
     NO_FOR,
+    NO_WHILE,
     NO_PRINT,
     NO_ATRIBUICAO,
     NO_COMPARACAO,
@@ -59,6 +60,7 @@ No *criar_no(enum TipoNo tipo, No *esquerda, No *direita);
 No *criar_funcao(char *nome, No *params, No *corpo);
 No *criar_if(No *condicao, No *corpo_if, No *corpo_else);
 No *criar_for(char *var, No *alcance, No *corpo);
+No *criar_while(No *condicao, No *corpo);
 No *criar_print(No *expr);
 No *criar_atribuicao(char *var, No *expr);
 No *criar_comparacao(enum TipoOp op, No *esquerda, No *direita);

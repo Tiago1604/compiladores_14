@@ -66,15 +66,25 @@ void verificar_operandos_funcao(No *op1, No *op2) {
 %token <inteiro> INTEIRO
 %token <flutuante> FLUTUANTE
 %token <str> IDENTIFICADOR
-%token IF ELSE FOR IN RANGE PRINT DEF
+%token IF ELSE FOR WHILE IN RANGE PRINT DEF
 %token SOMA SUBTRACAO MULTIPLICACAO DIVISAO
 %token ATRIBUICAO IGUAL DIFERENTE MENOR MAIOR MENOR_IGUAL MAIOR_IGUAL
 %token ABRE_PAR FECHA_PAR DOIS_PONTOS
 
-%type <arvore> programa lista_comandos comando
-%type <arvore> comando_if comando_for
-%type <arvore> expressao comando_print atribuicao
-%type <arvore> comando_def chamada_funcao
+
+/* não usar "\" aqui: */
+%type <arvore> programa
+%type <arvore> lista_comandos
+%type <arvore> chamada_funcao
+%type <arvore> comando
+%type <arvore> comando_if
+%type <arvore> comando_for
+%type <arvore> comando_print
+%type <arvore> atribuicao
+%type <arvore> comando_def
+%type <arvore> expressao
+%type <arvore> comando_while
+
 
 %define parse.error verbose
 
@@ -143,6 +153,7 @@ lista_comandos
 comando
     : comando_if
     | comando_for
+    | comando_while
     | comando_print
     | atribuicao
     | comando_def
@@ -184,14 +195,27 @@ comando_if
     ;
 
 comando_for
-    : FOR IDENTIFICADOR IN RANGE ABRE_PAR expressao FECHA_PAR DOIS_PONTOS lista_comandos
+    : FOR IDENTIFICADOR IN RANGE ABRE_PAR expressao FECHA_PAR DOIS_PONTOS
+      {
+        // Inserir a variável 'i' no escopo atual antes de processar o corpo
+        inserirSimbolo($2, TIPO_INT, escopo_atual);
+        // Não abrir novo escopo aqui, pois isto isolaria a variável
+      }
+      lista_comandos
+      {
+        $$ = criar_for($2, $6, $10); // Ajuste o número de $10 para refletir a posição correta
+      }
+    ;
+  
+comando_while
+    : WHILE expressao DOIS_PONTOS lista_comandos
       {
         abrir_escopo();
-        inserirSimbolo($2, TIPO_INT, escopo_atual);
-        $$ = criar_for($2, $6, $9);
+        $$ = criar_while($2, $4);
         fechar_escopo();
       }
     ;
+
 
 comando_print
     : PRINT ABRE_PAR expressao FECHA_PAR

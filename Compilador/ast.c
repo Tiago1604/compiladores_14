@@ -3,6 +3,8 @@
 #include <string.h>
 #include "ast.h"
 #include <stdbool.h>
+#include "tabela.h"
+
 
 // Funções de criação de nós da árvore sintática
 No *criar_no(enum TipoNo tipo, No *esquerda, No *direita) {
@@ -29,6 +31,11 @@ No *criar_if(No *condicao, No *corpo_if, No *corpo_else) {
 No *criar_for(char *var, No *alcance, No *corpo) {
     No *no = criar_no(NO_FOR, alcance, corpo);
     no->valor.sval = strdup(var);
+    return no;
+}
+
+No *criar_while(No *cond, No *body) {
+    No *no = criar_no(NO_WHILE, cond, body);
     return no;
 }
 
@@ -116,12 +123,12 @@ static bool eh_no_flutuante(No *no) {
     if (!no) return false;
     if (no->tipo == NO_FLUTUANTE) return true;
     if (no->tipo == NO_ARITMETICO) {
-        // Se qualquer lado for flutuante, resultado é flutuante
         return eh_no_flutuante(no->esquerda) || eh_no_flutuante(no->direita);
     }
     if (no->tipo == NO_IDENTIFICADOR) {
-        // Não é possível saber aqui, assume inteiro
-        return false;
+        // Se for variável, consulta a tabela no escopo global (main)
+        Simbolo *s = buscarSimbolo(no->valor.sval, 0);
+        return s && s->tipo == TIPO_FLOAT;
     }
     return false;
 }
@@ -180,7 +187,7 @@ void coletar_vars(No *no, struct ListaVar **vars) {
 void imprimir_decl_vars(struct ListaVar *vars, FILE *saida) {
     struct ListaVar *atual = vars;
     while (atual) {
-        fprintf(saida, "%s %s;\n", atual->eh_flutuante ? "float" : "int", atual->nome);
+        fprintf(saida, "    %s %s;\n", atual->eh_flutuante ? "float" : "int", atual->nome);
         atual = atual->prox;
     }
 }
@@ -412,11 +419,18 @@ void gerar_codigo_c_interno(No *no, FILE *saida, int indent) {
             gerar_codigo_c_interno(no->direita, saida, indent + 1);
             fprintf(saida, "%s}\n", ind);
             break;
+            
+        case NO_WHILE:
+            fprintf(saida, "%swhile (", ind);
+            gerar_codigo_c_interno(no->esquerda, saida, 0);
+            fprintf(saida, ") {\n");
+            gerar_codigo_c_interno(no->direita, saida, indent + 1);
+            fprintf(saida, "%s}\n", ind);
+            break;
+            
         case NO_PRINT: {
-            const char *fmt = "%d";
-            if (no->esquerda && no->esquerda->tipo == NO_FLUTUANTE) {
-                fmt = "%f";
-            }
+            bool is_float = eh_no_flutuante(no->esquerda);
+            const char *fmt = is_float ? "%f" : "%d";
             fprintf(saida, "%sprintf(\"%s\\n\", ", ind, fmt);
             gerar_codigo_c_interno(no->esquerda, saida, 0);
             fprintf(saida, ");\n");
