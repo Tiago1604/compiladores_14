@@ -53,17 +53,43 @@ Simbolo *buscarSimbolo(char *nome, int escopo) {
 }
 
 void imprimirTabela() {
+    // Primeiro, encontrar o maior escopo
+    int max_escopo = -1;
     for (int i = 0; i < TAM; i++) {
         for (Simbolo *s = tabela[i]; s; s = s->proximo) {
-            const char *tipo_str;
-            switch(s->tipo) {
-                case TIPO_INT: tipo_str = "int"; break;
-                case TIPO_FLOAT: tipo_str = "float"; break;
-                case TIPO_FUNC: tipo_str = "function"; break;
-                default: tipo_str = "unknown"; break;
-            }
-            printf("Nome: %s, Tipo: %s, Escopo: %d, Inicializada: %d\n",
-                s->nome, tipo_str, s->escopo, s->inicializada);
+            if (s->escopo > max_escopo) max_escopo = s->escopo;
         }
     }
+
+    // Imprimir por escopo
+    printf("\n=== Tabela de Símbolos ===\n");
+    for (int e = 0; e <= max_escopo; e++) {
+        if (e == 0) {
+            printf("\nEscopo Global:\n");
+        } else {
+            printf("\nEscopo %d (local):\n", e);
+        }
+        printf("------------------\n");
+        
+        int encontrou = 0;
+        for (int i = 0; i < TAM; i++) {
+            for (Simbolo *s = tabela[i]; s; s = s->proximo) {
+                if (s->escopo == e) {
+                    encontrou = 1;
+                    const char *tipo_str;
+                    switch(s->tipo) {
+                        case TIPO_INT: tipo_str = "inteiro"; break;
+                        case TIPO_FLOAT: tipo_str = "float"; break;
+                        case TIPO_FUNC: tipo_str = "função"; break;
+                        default: tipo_str = "desconhecido"; break;
+                    }
+                    printf("  %s: %s\n", s->nome, tipo_str);
+                }
+            }
+        }
+        if (!encontrou) {
+            printf("  (vazio)\n");
+        }
+    }
+    printf("\n");
 }

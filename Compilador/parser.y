@@ -52,14 +52,11 @@ void adicionar_erro(const char *mensagem) {
 %token SOMA SUBTRACAO MULTIPLICACAO DIVISAO
 %token ATRIBUICAO IGUAL DIFERENTE MENOR MAIOR MENOR_IGUAL MAIOR_IGUAL
 %token ABRE_PAR FECHA_PAR DOIS_PONTOS
-%token DEF
 
 %type <arvore> programa lista_comandos comando
 %type <arvore> comando_if comando_for
 %type <arvore> expressao comando_print atribuicao
-%type <arvore> comando_def
-%type <arvore> expressao
-%type <arvore> chamada_funcao
+%type <arvore> comando_def chamada_funcao
 
 %define parse.error verbose
 
