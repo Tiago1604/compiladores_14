@@ -4,6 +4,10 @@
 #include "ast.h"
 #include <stdbool.h>
 
+// Function prototypes
+void buscar_def(ASTNode *node, FILE *output);
+void gerar_print_def(ASTNode *node, FILE *output, int indent);
+
 // Funções de criação de nós da árvore sintática
 ASTNode *criar_no(enum NodeType type, ASTNode *left, ASTNode *right) {
     ASTNode *node = malloc(sizeof(ASTNode));
@@ -153,7 +157,6 @@ void collect_vars(ASTNode *node, struct VarList **vars) {
             collect_vars(node->right, vars);
             break;
         case NODE_FOR:
-            add_var(vars, node->value.sval, false);
             collect_vars(node->left, vars);
             collect_vars(node->right, vars);
             break;
@@ -183,6 +186,7 @@ void print_var_decls(struct VarList *vars, FILE *output) {
 void gerar_codigo_c(ASTNode *node, FILE *output) {
     struct VarList *vars = NULL;
     collect_vars(node, &vars);
+    buscar_def(node, output);
     fprintf(output, "int main() {\n");
     print_var_decls(vars, output);
     gerar_codigo_c_interno(node, output, 1);
@@ -263,6 +267,102 @@ void gerar_codigo_c_interno(ASTNode *node, FILE *output, int indent) {
     }
 }
 
+void buscar_def(ASTNode *node, FILE *output){
+    if (!node) return;
+    if(node->type == NODE_FUNCTION_DEF){
+            struct VarList *vars_def = NULL;
+            collect_vars(node->right, &vars_def);  // Coleta variáveis do corpo da função
+            
+            fprintf(output, "void %s(){\n", node->value.sval);
+            fprintf(output,"    ");
+            print_var_decls(vars_def, output);     // Imprime declarações de variáveis
+            gerar_print_def(node->right, output, 1);  // Gera código do corpo da função
+            fprintf(output, "}\n");
+            
+            // Libera a memória das variáveis
+            while (vars_def) {
+                struct VarList *tmp = vars_def;
+                vars_def = vars_def->next;
+                free(tmp);
+            }
+    }else{
+        buscar_def(node->left, output);
+        buscar_def(node->right, output);
+    }
+}
+
+void gerar_print_def(ASTNode *node, FILE *output, int indent) {
+    if (!node) return;
+    char ind[32];
+    memset(ind, ' ', indent * 4);
+    ind[indent * 4] = '\0';
+    switch (node->type) {
+        case NODE_STMT_LIST:
+            gerar_print_def(node->left, output, indent);
+            if (node->right) gerar_print_def(node->right, output, indent);
+            break;
+        case NODE_IF:
+            fprintf(output, "%sif ", ind);
+            gerar_print_def(node->left, output, 0);
+            fprintf(output, " {\n");
+            gerar_print_def(node->middle, output, indent + 1);
+            fprintf(output, "%s}", ind);
+            if (node->right) {
+                fprintf(output, " else {\n");
+                gerar_print_def(node->right, output, indent + 1);
+                fprintf(output, "%s}", ind);
+            }
+            fprintf(output, "\n");
+            break;
+        case NODE_FOR:
+            fprintf(output, "%sfor (int %s = 0; %s < ", ind, node->value.sval, node->value.sval);
+            gerar_print_def(node->left, output, 0);
+            fprintf(output, "; %s++) {\n", node->value.sval);
+            gerar_print_def(node->right, output, indent + 1);
+            fprintf(output, "%s}\n", ind);
+            break;
+        case NODE_FUNCTION_DEF:
+            gerar_print_def(node->left, output, 0);
+            gerar_print_def(node->right, output, indent + 1);
+            break;
+        case NODE_PRINT: {
+            // Detecta o tipo do nó a ser impresso
+            const char *fmt = "%d";
+            if (node->left && node->left->type == NODE_FLOAT) {
+                fmt = "%f";
+            }
+            fprintf(output, "%sprintf(\"%s\\n\", ", ind, fmt);
+            gerar_print_def(node->left, output, 0);
+            fprintf(output, ");\n");
+            break;
+        }
+        case NODE_ASSIGNMENT:
+            fprintf(output, "%s%s = ", ind, node->value.sval);
+            gerar_print_def(node->right, output, 0);
+            fprintf(output, ";\n");
+            break;
+        case NODE_COMPARISON:
+        case NODE_ARITHMETIC:
+            fprintf(output, "(");
+            gerar_print_def(node->left, output, 0);
+            fprintf(output, " %s ", get_op_string(node->op));
+            gerar_print_def(node->right, output, 0);
+            fprintf(output, ")");
+            break;
+        case NODE_NUMBER:
+            fprintf(output, "%d", node->value.ival);
+            break;
+        case NODE_FLOAT:
+            fprintf(output, "%f", node->value.fval);
+            break;
+        case NODE_IDENTIFIER:
+            fprintf(output, "%s", node->value.sval);
+            break;
+        default:
+            break;
+    }
+}
+
 // Impressão textual da AST para debug
 void imprimirAST(ASTNode *no, int nivel) {
     if (!no) return;
@@ -289,6 +389,11 @@ void imprimirAST(ASTNode *no, int nivel) {
             printf("FOR var=%s\n", no->value.sval);
             imprimirAST(no->left, nivel + 1);    // range
             imprimirAST(no->right, nivel + 1);   // body
+            break;
+        case NODE_FUNCTION_DEF:
+            printf("DEF %s\n", no->value.sval);
+            imprimirAST(no->left, nivel + 1);    // range
+            imprimirAST(no->right, nivel + 1);
             break;
         case NODE_PRINT:
             printf("PRINT\n");
