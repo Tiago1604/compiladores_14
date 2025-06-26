@@ -6,7 +6,7 @@ int main() {
     a = 1;
     b = 2.500000;
     printf("%d\n", a);
-    printf("%d\n", b);
-    printf("%d\n", (a + b));
+    printf("%f\n", b);
+    printf("%f\n", (a + b));
     return 0;
 }

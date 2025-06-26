@@ -5,6 +5,11 @@ void funcao1() {
     x = 10;
 }
 
+void funcao2() {
+    int x;
+    x = 20;
+}
+
 int main() {
     return 0;
 }

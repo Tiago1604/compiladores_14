@@ -1,12 +1,13 @@
 #include <stdio.h>
 
 int main() {
-    float z;
+    float w;
+    int z;
     float y;
     int x;
     x = 10;
     y = 2.500000;
-    z = (x + y);
-    printf("%d\n", z);
+    z = x;
+    w = y;
     return 0;
 }

@@ -1,11 +1,9 @@
 #include <stdio.h>
 
-void f() {
-}
-
-void g() {
+void minhaFuncao() {
     int x;
-    x = 1;
+    x = 10;
+    printf("%d\n", x);
 }
 
 int main() {
