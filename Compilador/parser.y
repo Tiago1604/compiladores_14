@@ -101,7 +101,7 @@ void verificar_operandos_funcao(No *op1, No *op2) {
 %nonassoc ELSE                                             // Marcador para associar else com o if mais próximo
 
 // Configura o Bison para gerar mensagens de erro mais detalhadas
-%define "parse.error" "verbose"
+%define parse.error verbose
 
 %%
 
