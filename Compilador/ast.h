@@ -18,6 +18,7 @@ enum TipoNo {
     NO_ARITMETICO,
     NO_NUMERO,
     NO_FLUTUANTE,
+    NO_STRING,        // Novo tipo para string
     NO_IDENTIFICADOR,
     NO_CHAMADA_FUNCAO,
 };
@@ -69,6 +70,8 @@ No *criar_numero(int valor);
 No *criar_flutuante(float valor);
 No *criar_identificador(char *nome);
 No *criar_chamada_funcao(char *nome, No *args);
+// Função para criar nó de string
+No *criar_string(char *valor);
 
 // Função de geração de código
 void gerar_codigo_c(No *no, FILE *saida);
@@ -82,4 +85,4 @@ void extrair_funcoes_aninhadas(No *no, No **comandos_globais, No **definicoes_fu
 // Função para imprimir a AST
 void imprimirAST(No *no, int nivel);
 
-#endif 
+#endif

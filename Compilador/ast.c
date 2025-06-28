@@ -85,6 +85,12 @@ No *criar_chamada_funcao(char *nome, No *args) {
     return no;
 }
 
+No *criar_string(char *valor) {
+    No *no = criar_no(NO_STRING, NULL, NULL);
+    no->valor.sval = strdup(valor);
+    return no;
+}
+
 // Função auxiliar para obter o símbolo da operação
 const char *obter_string_op(enum TipoOp op) {
     switch (op) {
@@ -122,6 +128,7 @@ static struct ListaVar *buscar_var(struct ListaVar *vars, const char *nome) {
 static bool eh_no_flutuante(No *no) {
     if (!no) return false;
     if (no->tipo == NO_FLUTUANTE) return true;
+    if (no->tipo == NO_STRING) return false;  // String não é flutuante
     if (no->tipo == NO_ARITMETICO) {
         return eh_no_flutuante(no->esquerda) || eh_no_flutuante(no->direita);
     }
@@ -429,11 +436,17 @@ void gerar_codigo_c_interno(No *no, FILE *saida, int indent) {
             break;
             
         case NO_PRINT: {
-            bool is_float = eh_no_flutuante(no->esquerda);
-            const char *fmt = is_float ? "%f" : "%d";
-            fprintf(saida, "%sprintf(\"%s\\n\", ", ind, fmt);
-            gerar_codigo_c_interno(no->esquerda, saida, 0);
-            fprintf(saida, ");\n");
+            if (no->esquerda->tipo == NO_STRING) {
+                // Caso especial para string literal
+                fprintf(saida, "%sprintf(\"%s\\n\");\n", ind, no->esquerda->valor.sval);
+            } else {
+                // Caso para expressões numéricas
+                bool is_float = eh_no_flutuante(no->esquerda);
+                const char *fmt = is_float ? "%f" : "%d";
+                fprintf(saida, "%sprintf(\"%s\\n\", ", ind, fmt);
+                gerar_codigo_c_interno(no->esquerda, saida, 0);
+                fprintf(saida, ");\n");
+            }
             break;
         }
         case NO_ATRIBUICAO:
@@ -462,6 +475,9 @@ void gerar_codigo_c_interno(No *no, FILE *saida, int indent) {
             fprintf(saida, "%s%s(", ind, no->valor.sval);
             // Por enquanto, assumimos que não há argumentos
             fprintf(saida, ");\n");
+            break;
+        case NO_STRING:
+            fprintf(saida, "\"%s\"", no->valor.sval);
             break;
         default:
             break;
@@ -526,6 +542,9 @@ void imprimirAST(No *no, int nivel) {
             break;
         case NO_IDENTIFICADOR:
             printf("IDENTIFICADOR %s\n", no->valor.sval);
+            break;
+        case NO_STRING:
+            printf("STRING \"%s\"\n", no->valor.sval);
             break;
         default:
             printf("NO tipo %d\n", no->tipo);
