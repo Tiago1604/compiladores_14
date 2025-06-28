@@ -34,81 +34,81 @@ O planejamento está dividido em seis sprints, cobrindo desde a formação das e
     - [x] Analisador léxico funcional (arquivo .l completo).  
     - [x] Primeiras regras sintáticas implementadas no arquivo .y.  
     - [x] Formulário de apresentação do P1 preenchido até 28/04.  
-    - [ ] Apresentação no dia 30/04.  
+    - [x] Apresentação no dia 30/04.  
 
 - **Tarefas e Atividades**  
     1. [x] Finalizar as expressões regulares no Flex.  
     2. [x] Iniciar o parser no Bison.  
     3. [x] Testar analisador léxico e parser inicial.  
-    4. [ ] Preparar slides/demonstrativo para o P1.  
+    4. [x] Preparar slides/demonstrativo para o P1.  
     5. [x] Preencher o formulário do P1.  
 
 ---
 
 ### Sprint 3 (01/05 a 14/05)  
 - **Objetivos Principais**  
-    - [ ] Evoluir o analisador sintático com novas produções gramaticais.  
-    - [ ] Iniciar a estrutura interna do compilador (árvore sintática, tabela de símbolos).  
-    - [ ] Dar os primeiros passos na análise semântica.  
+    - [x] Evoluir o analisador sintático com novas produções gramaticais.  
+    - [x] Iniciar a estrutura interna do compilador (árvore sintática, tabela de símbolos).  
+    - [x] Dar os primeiros passos na análise semântica.  
 
 - **Principais Entregas**  
-    - [ ] Parser com cobertura mais ampla da gramática.  
-    - [ ] Estrutura de dados (AST e tabela de símbolos) definidas e parcialmente implementadas.  
-    - [ ] Analisador semântico inicial identificando erros básicos.  
+    - [x] Parser com cobertura mais ampla da gramática.  
+    - [x] Estrutura de dados (AST e tabela de símbolos) definidas e parcialmente implementadas.  
+    - [x] Analisador semântico inicial identificando erros básicos.  
 
 - **Tarefas e Atividades**  
-    1. [ ] Estender as regras gramaticais no Bison.  
-    2. [ ] Criar e popular a tabela de símbolos.  
-    3. [ ] Construir a AST.  
-    4. [ ] Implementar verificação de tipos e escopo simples.  
+    1. [x] Estender as regras gramaticais no Bison.  
+    2. [x] Criar e popular a tabela de símbolos.  
+    3. [x] Construir a AST.  
+    4. [x] Implementar verificação de tipos e escopo simples.  
 
 ---
 
 ### Sprint 4 (15/05 a 04/06)  
 - **Objetivos Principais**  
-    - [ ] Concluir análise semântica principal.  
-    - [ ] Implementar a geração de código intermediário.  
-    - [ ] Preparar o ponto de controle P2.  
+    - [x] Concluir análise semântica principal.  
+    - [x] Implementar a geração de código intermediário.  
+    - [x] Preparar o ponto de controle P2.  
 
 - **Principais Entregas**  
-    - [ ] Analisador semântico robusto.  
-    - [ ] Módulo de geração de código intermediário.  
-    - [ ] Formulário do P2 preenchido até 02/06.  
-    - [ ] Apresentação do ponto de controle P2 em 04/06.  
+    - [x] Analisador semântico robusto.  
+    - [x] Módulo de geração de código intermediário.  
+    - [x] Formulário do P2 preenchido até 02/06.  
+    - [x] Apresentação do ponto de controle P2 em 04/06.  
 
 - **Tarefas e Atividades**  
-    1. [ ] Refinar a análise semântica.  
-    2. [ ] Criar gerador de código intermediário.  
-    3. [ ] Configurar testes para instruções intermediárias.  
-    4. [ ] Preparar apresentação P2.  
+    1. [x] Refinar a análise semântica.  
+    2. [x] Criar gerador de código intermediário.  
+    3. [x] Configurar testes para instruções intermediárias.  
+    4. [x] Preparar apresentação P2.  
 
 ---
 
 ### Sprint 5 (05/06 a 25/06)  
 - **Objetivos Principais**  
     - [ ] Introduzir e testar otimizações no código intermediário.  
-    - [ ] Implementar a geração de código final.  
-    - [ ] Realizar testes integrados e correções de bugs.  
-    - [ ] Entregar o compilador final até 27/06.  
+    - [x] Implementar a geração de código final.  
+    - [x] Realizar testes integrados e correções de bugs.  
+    - [x] Entregar o compilador final até 27/06.  
 
 - **Principais Entregas**  
     - [ ] Módulo de otimização básico.  
-    - [ ] Módulo de geração de código final.  
-    - [ ] Compilador “rodando de ponta a ponta”.  
+    - [x] Módulo de geração de código final.  
+    - [x] Compilador “rodando de ponta a ponta”.  
 
 - **Tarefas e Atividades**  
-    1. [ ] Projetar e implementar otimizações simples.  
-    2. [ ] Criar tradutor final.  
-    3. [ ] Testar em múltiplos programas de exemplo.  
-    4. [ ] Entregar o compilador até 27/06.  
+    1. [x] Projetar e implementar otimizações simples.  
+    2. [x] Criar tradutor final.  
+    3. [x] Testar em múltiplos programas de exemplo.  
+    4. [x] Entregar o compilador até 27/06.  
 
 ---
 
 ### Sprint 6 (26/06 a 09/07)  
 - **Objetivos Principais**  
     - [ ] Realizar as entrevistas finais.  
-    - [ ] Ajustar eventuais pendências do compilador.  
-    - [ ] Concluir a documentação e finalizar a disciplina.  
+    - [x] Ajustar eventuais pendências do compilador.  
+    - [x] Concluir a documentação e finalizar a disciplina.  
 
 - **Principais Entregas**  
     - [ ] Apresentação do compilador nas entrevistas.  
@@ -117,4 +117,4 @@ O planejamento está dividido em seis sprints, cobrindo desde a formação das e
 - **Tarefas e Atividades**  
     1. [ ] Entrevistas de entrega.  
     2. [ ] Corrigir issues identificadas.  
-    3. [ ] Documentar o projeto.  
+    3. [ ] Documentar o projeto.

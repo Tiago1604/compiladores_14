@@ -22,11 +22,11 @@
 |--------|---------|------|----------|--------|
 | 1 | 24/03 - 09/04 | Preparação e Análise Léxica | Analisador Léxico Funcional | ✅ Finalizada |
 | 2 | 10/04 - 28/04 | Análise Sintática | Parser e P1 | ✅ Finalizada |
-| 3 | 01/05 - 14/05 | Representação Interna | AST e Tabela de Símbolos | 🔄 Iniciada |
-| 4 | 15/05 - 02/06 | Análise Semântica | Verificador Semântico e P2 | 🔄 Iniciada |
-| 5 | 05/06 - 18/06 | Geração de Código | Gerador de Código C | 🔄 Iniciada |
-| 6 | 19/06 - 27/06 | Refinamento e Testes | Compilador Completo | 🔄 Iniciada |
-| 7 | 28/06 - 09/07 | Apresentação e Fechamento | Documentação Final e Entrevista | 🔄 Iniciada |
+| 3 | 01/05 - 14/05 | Representação Interna | AST e Tabela de Símbolos | ✅ Finalizada  |
+| 4 | 15/05 - 02/06 | Análise Semântica | Verificador Semântico e P2 | ✅ Finalizada  |
+| 5 | 05/06 - 18/06 | Geração de Código | Gerador de Código C | ✅ Finalizada  |
+| 6 | 19/06 - 27/06 | Refinamento e Testes | Compilador Completo | ✅ Finalizada  |
+| 7 | 28/06 - 09/07 | Apresentação e Fechamento | Documentação Final e Entrevista | ✅ Finalizada  |
 
 ## Detalhamento das Sprints
 
@@ -49,26 +49,26 @@
 
 - **Tarefas e Atividades**  
     1. [x] Definir o escopo do compilador.  
-        - **Responsáveis:** Filipe, Tiago, Isabelle, João Pedro Costa (johnaopedro), João Pedro  
+        - **Responsáveis:** todos  
     2. [x] Configurar repositório e adicionar todos os membros.  
-        - **Responsáveis:** Tiago  
+        - **Responsáveis:** todos  
     3. [x] Configurar ferramentas: Flex, Bison, compilador C/C++.  
-        - **Responsáveis:** Filipe, Tiago, Isabelle, João Pedro Costa (johnaopedro), João Pedro
+        - **Responsáveis:** todos
     4. [x] Criar gramática inicial no Bison e arquivo de regras léxicas no Flex.  
-        - **Responsáveis:** Filipe, Tiago, Isabelle, João Pedro Costa (johnaopedro), João Pedro  
+        - **Responsáveis:** todos  
     5. [x] Revisar e atualizar a documentação do projeto.  
-        - **Responsáveis:** João Pedro Costa (johnaopedro)  
+        - **Responsáveis:** todos  
 
 ---
 
 ### Sprint 2 (10/04 a 30/04)  
 - **Objetivos Principais**  
     - [x] Concluir a análise léxica (Flex) e iniciar a análise sintática (Bison).  
-        - **Responsáveis:** Filipe, Tiago, Isabelle, João Pedro Costa (johnaopedro), João Pedro 
+        - **Responsáveis:** todos 
     - [x] Implementar identificação de tokens e testar o reconhecimento básico da linguagem.  
-        - **Responsáveis:** Filipe, Tiago, Isabelle, João Pedro Costa (johnaopedro), João Pedro 
+        - **Responsáveis:** todos
     - [x] Preparar o material para o Ponto de Controle P1.  
-        - **Responsáveis:** João Pedro Costa (johnaopedro)  
+        - **Responsáveis:** todos  
 
 - **Principais Entregas**  
     - [x] Analisador léxico funcional (arquivo .l completo).  
@@ -96,29 +96,116 @@
 
 ### Sprint 3 (01/05 a 14/05)  
 - **Objetivos Principais**  
-    - [ ] Evoluir o analisador sintático com novas produções gramaticais.  
+    - [x] Evoluir o analisador sintático com novas produções gramaticais.  
         - **Responsáveis:** Tiago, Isabelle 
-    - [ ] Iniciar a estrutura interna do compilador (árvore sintática, tabela de símbolos).  
+    - [x] Iniciar a estrutura interna do compilador (árvore sintática, tabela de símbolos).  
         - **Responsáveis:** Filipe, João Pedro 
-    - [ ] Dar os primeiros passos na análise semântica.  
+    - [x] Dar os primeiros passos na análise semântica.  
         - **Responsáveis:** Tiago, João Pedro Costa (johnaopedro)  
 
 - **Principais Entregas**  
-    - [ ] Parser com cobertura mais ampla da gramática.  
+    - [x] Parser com cobertura mais ampla da gramática.  
         - **Responsáveis:** Tiago, Isabelle 
-    - [ ] Estrutura de dados (AST e tabela de símbolos) definidas e parcialmente implementadas.  
+    - [x] Estrutura de dados (AST e tabela de símbolos) definidas e parcialmente implementadas.  
         - **Responsáveis:** Filipe, João Pedro 
-    - [ ] Analisador semântico inicial identificando erros básicos.  
+    - [x] Analisador semântico inicial identificando erros básicos.  
         - **Responsáveis:** Tiago, João Pedro Costa (johnaopedro)  
 
 - **Tarefas e Atividades**  
-    1. [ ] Estender as regras gramaticais no Bison.  
+    1. [x] Estender as regras gramaticais no Bison.  
         - **Responsáveis:** Tiago, Isabelle
-    2. [ ] Criar e popular a tabela de símbolos.  
+    2. [x] Criar e popular a tabela de símbolos.  
         - **Responsáveis:** Filipe, João Pedro, João Pedro Costa (johnaopedro) 
-    3. [ ] Construir a AST.  
+    3. [x] Construir a AST.  
         - **Responsáveis:** Filipe, João Pedro, João Pedro Costa (johnaopedro) 
-    4. [ ] Implementar verificação de tipos e escopo simples.  
+    4. [x] Implementar verificação de tipos e escopo simples.  
         - **Responsáveis:** Tiago, João Pedro Costa (johnaopedro)  
-    5. [ ] Revisar e atualizar a documentação do projeto.  
-        - **Responsáveis:** João Pedro Costa (johnaopedro)
+    5. [x] Revisar e atualizar a documentação do projeto.  
+        - **Responsáveis:** todos
+
+---
+
+### Sprint 4 (15/05 a 04/06)  
+- **Objetivos Principais**  
+    - [x] Concluir análise semântica principal.  
+        - **Responsáveis:** todos  
+    - [x] Implementar a geração de código intermediário.  
+        - **Responsáveis:** todos  
+    - [x] Preparar o ponto de controle P2.  
+        - **Responsáveis:** todos  
+
+- **Principais Entregas**  
+    - [x] Analisador semântico robusto.  
+        - **Responsáveis:** todos  
+    - [x] Módulo de geração de código intermediário.  
+        - **Responsáveis:** todos  
+    - [x] Formulário do P2 preenchido até 02/06.  
+        - **Responsáveis:** todos  
+    - [x] Apresentação do ponto de controle P2 em 04/06.  
+        - **Responsáveis:** todos  
+
+- **Tarefas e Atividades**  
+    1. [x] Refinar a análise semântica.  
+        - **Responsáveis:** todos  
+    2. [x] Criar gerador de código intermediário.  
+        - **Responsáveis:** todos  
+    3. [x] Configurar testes para instruções intermediárias.  
+        - **Responsáveis:** todos  
+    4. [x] Preparar apresentação P2.  
+        - **Responsáveis:** todos  
+
+---
+
+### Sprint 5 (05/06 a 25/06)  
+- **Objetivos Principais**  
+    - [x] Introduzir e testar otimizações no código intermediário.  
+        - **Responsáveis:** todos  
+    - [x] Implementar a geração de código final.  
+        - **Responsáveis:** todos  
+    - [x] Realizar testes integrados e correções de bugs.  
+        - **Responsáveis:** todos  
+    - [x] Entregar o compilador final até 27/06.  
+        - **Responsáveis:** todos  
+
+- **Principais Entregas**  
+    - [x] Módulo de otimização básico.  
+        - **Responsáveis:** todos  
+    - [x] Módulo de geração de código final.  
+        - **Responsáveis:** todos  
+    - [x] Compilador “rodando de ponta a ponta”.  
+        - **Responsáveis:** todos  
+
+- **Tarefas e Atividades**  
+    1. [x] Projetar e implementar otimizações simples.  
+        - **Responsáveis:** todos  
+    2. [x] Criar tradutor final.  
+        - **Responsáveis:** todos  
+    3. [x] Testar em múltiplos programas de exemplo.  
+        - **Responsáveis:** todos  
+    4. [x] Entregar o compilador até 27/06.  
+        - **Responsáveis:** todos  
+
+---
+
+### Sprint 6 (26/06 a 09/07)  
+- **Objetivos Principais**  
+    - [ ] Realizar as entrevistas finais.  
+        - **Responsáveis:** todos  
+    - [x] Ajustar eventuais pendências do compilador.  
+        - **Responsáveis:** todos  
+    - [x] Concluir a documentação e finalizar a disciplina.  
+        - **Responsáveis:** todos  
+
+- **Principais Entregas**  
+    - [ ] Apresentação do compilador nas entrevistas.  
+        - **Responsáveis:** todos  
+    - [ ] Correções finais e documentação completa.  
+        - **Responsáveis:** todos  
+
+- **Tarefas e Atividades**  
+    1. [ ] Entrevistas de entrega.  
+        - **Responsáveis:** todos  
+    2. [ ] Corrigir issues identificadas.  
+        - **Responsáveis:** todos  
+    3. [ ] Documentar o projeto.  
+        - **Responsáveis:** todos  
