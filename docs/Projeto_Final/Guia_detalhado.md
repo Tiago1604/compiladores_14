@@ -9,13 +9,21 @@ Este compilador converte um subconjunto da linguagem Python para código C. Foi 
 ## 2. Estrutura do Projeto
 
 Compilador/
+
 ├── scanner.l # Analisador léxico (Flex)
+
 ├── parser.y # Analisador sintático (Bison)
+
 ├── ast.h/c # Definição e manipulação da AST
+
 ├── tabela.h/c # Tabela de símbolos
+
 ├── main.c # Programa principal
+
 ├── entrada/ # Diretório para arquivos Python de entrada
+
 ├── saida/ # Diretório para arquivos C gerados
+
 └── tests/ # Testes do compilador
 
 ## 3. Funcionalidades Suportadas
