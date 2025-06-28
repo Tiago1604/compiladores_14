@@ -3,9 +3,7 @@
 
 struct ListaVar;
 
-/*
- * Tipos de nós da árvore sintática
- */
+// Tipos de nós da árvore sintática
 enum TipoNo {
     NO_LISTA_COMANDOS,
     NO_DEF_FUNCAO,
@@ -23,9 +21,7 @@ enum TipoNo {
     NO_CHAMADA_FUNCAO,
 };
 
-/*
- * Tipos de operações
- */
+// Tipos de operações
 enum TipoOp {
     OP_MAIS,
     OP_MENOS,

@@ -6,7 +6,8 @@
 #include "tabela.h"
 
 
-// Funções de criação de nós da árvore sintática
+// Função base para criar qualquer tipo de nó na AST
+// Aloca memória e inicializa os campos do nó
 No *criar_no(enum TipoNo tipo, No *esquerda, No *direita) {
     No *no = malloc(sizeof(No));
     no->tipo = tipo;
@@ -16,82 +17,120 @@ No *criar_no(enum TipoNo tipo, No *esquerda, No *direita) {
     return no;
 }
 
+// Cria um nó que representa uma definição de função
+// nome: identificador da função
+// params: lista de parâmetros (não implementado completamente)
+// corpo: comandos dentro da função
 No *criar_funcao(char *nome, No *params, No *corpo) {
     No *no = criar_no(NO_DEF_FUNCAO, params, corpo);
-    no->valor.sval = strdup(nome);
+    no->valor.sval = strdup(nome);  // Duplica a string para evitar problemas de memória
     return no;
 }
 
+// Cria um nó para estrutura condicional if-else
+// condicao: expressão a ser avaliada
+// corpo_if: comandos executados se condição for verdadeira
+// corpo_else: comandos executados se condição for falsa (pode ser NULL)
 No *criar_if(No *condicao, No *corpo_if, No *corpo_else) {
     No *no = criar_no(NO_IF, condicao, corpo_else);
-    no->meio = corpo_if;
+    no->meio = corpo_if;  // O nó if tem 3 filhos: condição, corpo_if e corpo_else
     return no;
 }
 
+// Cria um nó para loop for no estilo Python
+// var: variável de iteração
+// alcance: limite do loop (ex: range(10))
+// corpo: comandos dentro do loop
 No *criar_for(char *var, No *alcance, No *corpo) {
     No *no = criar_no(NO_FOR, alcance, corpo);
-    no->valor.sval = strdup(var);
+    no->valor.sval = strdup(var);  // Guarda o nome da variável de iteração
     return no;
 }
 
+// Cria um nó para loop while
+// cond: condição para continuar o loop
+// body: comandos dentro do loop
 No *criar_while(No *cond, No *body) {
     No *no = criar_no(NO_WHILE, cond, body);
     return no;
 }
 
+// Cria um nó para comando de impressão
+// expr: expressão a ser impressa
 No *criar_print(No *expr) {
     return criar_no(NO_PRINT, expr, NULL);
 }
 
+// Cria um nó para atribuição de variável
+// var: nome da variável 
+// expr: expressão cujo valor será atribuído
 No *criar_atribuicao(char *var, No *expr) {
     No *no = criar_no(NO_ATRIBUICAO, NULL, expr);
-    no->valor.sval = strdup(var);
+    no->valor.sval = strdup(var);  // Guarda o nome da variável
     return no;
 }
 
+// Cria um nó para operações de comparação (==, !=, <, >, <=, >=)
+// op: tipo de operação de comparação
+// esquerda/direita: operandos da comparação
 No *criar_comparacao(enum TipoOp op, No *esquerda, No *direita) {
     No *no = criar_no(NO_COMPARACAO, esquerda, direita);
-    no->op = op;
+    no->op = op;  // Guarda o tipo de operação
     return no;
 }
 
+// Cria um nó para operações aritméticas (+, -, *, /)
+// op: tipo de operação aritmética
+// esquerda/direita: operandos da operação
 No *criar_aritmetico(enum TipoOp op, No *esquerda, No *direita) {
     No *no = criar_no(NO_ARITMETICO, esquerda, direita);
-    no->op = op;
+    no->op = op;  // Guarda o tipo de operação
     return no;
 }
 
+// Cria um nó para representar um número inteiro literal
+// valor: o valor do inteiro
 No *criar_numero(int valor) {
     No *no = criar_no(NO_NUMERO, NULL, NULL);
-    no->valor.ival = valor;
+    no->valor.ival = valor;  // Guarda o valor inteiro
     return no;
 }
 
+// Cria um nó para representar um número de ponto flutuante
+// valor: o valor do float
 No *criar_flutuante(float valor) {
     No *no = criar_no(NO_FLUTUANTE, NULL, NULL);
-    no->valor.fval = valor;
+    no->valor.fval = valor;  // Guarda o valor float
     return no;
 }
 
+// Cria um nó para representar um identificador (nome de variável)
+// nome: o nome do identificador
 No *criar_identificador(char *nome) {
     No *no = criar_no(NO_IDENTIFICADOR, NULL, NULL);
-    no->valor.sval = strdup(nome);
+    no->valor.sval = strdup(nome);  // Guarda o nome do identificador
     return no;
 }
 
+// Cria um nó para chamada de função
+// nome: nome da função chamada
+// args: argumentos para a função (pode ser NULL)
 No *criar_chamada_funcao(char *nome, No *args) {
     No *no = criar_no(NO_CHAMADA_FUNCAO, args, NULL);
-    no->valor.sval = strdup(nome);
+    no->valor.sval = strdup(nome);  // Guarda o nome da função
     return no;
 }
 
+// Cria um nó para representar uma string literal
+// valor: conteúdo da string
 No *criar_string(char *valor) {
     No *no = criar_no(NO_STRING, NULL, NULL);
-    no->valor.sval = strdup(valor);
+    no->valor.sval = strdup(valor);  // Guarda o conteúdo da string
     return no;
 }
 
-// Função auxiliar para obter o símbolo da operação
+// Converte o tipo de operação interno para sua representação em texto
+// Útil para geração de código e depuração
 const char *obter_string_op(enum TipoOp op) {
     switch (op) {
         case OP_MAIS: return "+";
@@ -108,14 +147,15 @@ const char *obter_string_op(enum TipoOp op) {
     }
 }
 
-// Estrutura para armazenar variáveis já declaradas
+// Estrutura para manter uma lista de variáveis encontradas durante a geração de código
 struct ListaVar {
-    char nome[64];
-    bool eh_flutuante;
-    struct ListaVar *prox;
+    char nome[64];  // Nome da variável
+    bool eh_flutuante;  // Tipo da variável (int ou float)
+    struct ListaVar *prox;  // Ponteiro para próxima variável na lista
 };
 
-// Função auxiliar para checar se variável já foi declarada e seu tipo
+// Busca uma variável na lista pelo nome
+// Retorna ponteiro para nó da lista se encontrado, NULL caso contrário
 static struct ListaVar *buscar_var(struct ListaVar *vars, const char *nome) {
     while (vars) {
         if (strcmp(vars->nome, nome) == 0) return vars;
@@ -124,16 +164,18 @@ static struct ListaVar *buscar_var(struct ListaVar *vars, const char *nome) {
     return NULL;
 }
 
-// Função para determinar se um nó é float
+// Verifica se uma expressão vai resultar em um valor de ponto flutuante
+// Importante para determinar o tipo correto ao declarar variáveis
 static bool eh_no_flutuante(No *no) {
     if (!no) return false;
     if (no->tipo == NO_FLUTUANTE) return true;
-    if (no->tipo == NO_STRING) return false;  // String não é flutuante
+    if (no->tipo == NO_STRING) return false;  // String não é float
     if (no->tipo == NO_ARITMETICO) {
+        // Se qualquer operando for float, o resultado é float
         return eh_no_flutuante(no->esquerda) || eh_no_flutuante(no->direita);
     }
     if (no->tipo == NO_IDENTIFICADOR) {
-        // Se for variável, consulta a tabela no escopo global (main)
+        // Se for variável, consulta a tabela de símbolos
         Simbolo *s = buscarSimbolo(no->valor.sval, 0);
         return s && s->tipo == TIPO_FLOAT;
     }
@@ -141,47 +183,57 @@ static bool eh_no_flutuante(No *no) {
 }
 
 
-// Função auxiliar para adicionar variável à lista, promovendo para float se necessário
+// Adiciona uma variável à lista de variáveis
+// Se a variável já existe e o novo tipo é float, promove a variável para float
 void adicionar_var(struct ListaVar **vars, const char *nome, bool eh_flutuante) {
     struct ListaVar *v = buscar_var(*vars, nome);
     if (v) {
+        // Variável já existe: se o novo é float, promove para float
         if (eh_flutuante) v->eh_flutuante = true;
         return;
     }
+    // Criar nova variável na lista
     struct ListaVar *nova_var = malloc(sizeof(struct ListaVar));
     strncpy(nova_var->nome, nome, 63);
-    nova_var->nome[63] = '\0';
+    nova_var->nome[63] = '\0';  // Garante terminação da string
     nova_var->eh_flutuante = eh_flutuante;
     nova_var->prox = *vars;
-    *vars = nova_var;
+    *vars = nova_var;  // Insere no início da lista
 }
 
-// Função para coletar variáveis
+// Percorre a AST coletando todas as variáveis usadas no programa
+// Adiciona-as à lista de variáveis para posterior declaração em C
 void coletar_vars(No *no, struct ListaVar **vars) {
     if (!no) return;
     switch (no->tipo) {
         case NO_ATRIBUICAO:
+            // Quando encontra atribuição, adiciona a variável à lista
             adicionar_var(vars, no->valor.sval, eh_no_flutuante(no->direita));
             coletar_vars(no->direita, vars);
             break;
         case NO_LISTA_COMANDOS:
+            // Percorre recursivamente a lista de comandos
             coletar_vars(no->esquerda, vars);
             coletar_vars(no->direita, vars);
             break;
         case NO_IF:
+            // Percorre todos os componentes do if-else
             coletar_vars(no->esquerda, vars);
             coletar_vars(no->meio, vars);
             coletar_vars(no->direita, vars);
             break;
         case NO_FOR:
+            // Percorre o range e corpo do loop
             coletar_vars(no->esquerda, vars);
             coletar_vars(no->direita, vars);
             break;
         case NO_PRINT:
+            // Verifica a expressão a ser impressa
             coletar_vars(no->esquerda, vars);
             break;
         case NO_COMPARACAO:
         case NO_ARITMETICO:
+            // Verifica ambos os operandos
             coletar_vars(no->esquerda, vars);
             coletar_vars(no->direita, vars);
             break;
@@ -190,7 +242,8 @@ void coletar_vars(No *no, struct ListaVar **vars) {
     }
 }
 
-// Função para imprimir declarações de variáveis
+// Gera as declarações de variáveis no código C
+// Imprime cada variável com seu tipo apropriado
 void imprimir_decl_vars(struct ListaVar *vars, FILE *saida) {
     struct ListaVar *atual = vars;
     while (atual) {
@@ -199,24 +252,26 @@ void imprimir_decl_vars(struct ListaVar *vars, FILE *saida) {
     }
 }
 
-// Função para extrair comandos globais da AST (comandos que não estão dentro de funções)
+// Extrai comandos globais e definições de funções da AST
+// Separa o que deve estar no escopo global do que deve estar dentro de funções
 void extrair_comandos_globais(No *no, No **comandos_globais, No **definicoes_funcoes) {
     if (!no) return;
     
     if (no->tipo == NO_LISTA_COMANDOS) {
+        // Percorre recursivamente a lista de comandos
         extrair_comandos_globais(no->esquerda, comandos_globais, definicoes_funcoes);
         extrair_comandos_globais(no->direita, comandos_globais, definicoes_funcoes);
     } else if (no->tipo == NO_DEF_FUNCAO) {
-        // Esta é uma definição de função - adiciona à lista de definições
+        // Encontrou definição de função - adiciona à lista específica
         No *novo_def = malloc(sizeof(No));
         *novo_def = *no;
         novo_def->esquerda = NULL;
         novo_def->direita = NULL;
         
-        // Extrair apenas o corpo da função (sem comandos globais misturados)
+        // Extrai apenas o corpo da função
         extrair_corpo_funcao(no->direita, &(novo_def->direita));
         
-        // Adicionar à lista de definições
+        // Adiciona à lista de definições de funções
         if (!*definicoes_funcoes) {
             *definicoes_funcoes = criar_no(NO_LISTA_COMANDOS, novo_def, NULL);
         } else {
@@ -225,10 +280,10 @@ void extrair_comandos_globais(No *no, No **comandos_globais, No **definicoes_fun
             temp->direita = criar_no(NO_LISTA_COMANDOS, novo_def, NULL);
         }
         
-        // CORREÇÃO: Extrair funções aninhadas incorretamente e outras definições globais
+        // CORREÇÃO: Extrai funções aninhadas incorretamente e outras definições globais
         extrair_funcoes_aninhadas(no->direita, comandos_globais, definicoes_funcoes);
     } else {
-        // Comando global (não é definição de função)
+        // Comando global (não é função) - adiciona à lista de comandos globais
         if (!*comandos_globais) {
             *comandos_globais = criar_no(NO_LISTA_COMANDOS, no, NULL);
         } else {
@@ -239,7 +294,8 @@ void extrair_comandos_globais(No *no, No **comandos_globais, No **definicoes_fun
     }
 }
 
-// Função para extrair apenas o corpo da função (comandos dentro da função)
+// Extrai apenas os comandos que formam o corpo de uma função
+// Filtra comandos que deveriam estar no escopo global
 void extrair_corpo_funcao(No *no, No **corpo) {
     if (!no) return;
     
@@ -261,7 +317,7 @@ void extrair_corpo_funcao(No *no, No **corpo) {
     }
 }
 
-// Função para extrair comandos globais que estão misturados no corpo da função
+// Extrai comandos globais que foram incorretamente colocados dentro de funções
 void extrair_comandos_globais_do_corpo(No *no, No **comandos_globais) {
     if (!no) return;
     
@@ -280,7 +336,8 @@ void extrair_comandos_globais_do_corpo(No *no, No **comandos_globais) {
     }
 }
 
-// Nova função para extrair funções que foram aninhadas incorretamente
+// Extrai funções que foram aninhadas incorretamente (dentro de outras funções)
+// Em C, funções não podem ser aninhadas, então precisamos movê-las para o nível global
 void extrair_funcoes_aninhadas(No *no, No **comandos_globais, No **definicoes_funcoes) {
     if (!no) return;
     
@@ -294,10 +351,10 @@ void extrair_funcoes_aninhadas(No *no, No **comandos_globais, No **definicoes_fu
         novo_def->esquerda = NULL;
         novo_def->direita = NULL;
         
-        // Extrair apenas o corpo da função
+        // Extrai apenas o corpo da função
         extrair_corpo_funcao(no->direita, &(novo_def->direita));
         
-        // Adicionar à lista de definições globais
+        // Adiciona à lista de definições globais
         if (!*definicoes_funcoes) {
             *definicoes_funcoes = criar_no(NO_LISTA_COMANDOS, novo_def, NULL);
         } else {
@@ -306,7 +363,7 @@ void extrair_funcoes_aninhadas(No *no, No **comandos_globais, No **definicoes_fu
             temp->direita = criar_no(NO_LISTA_COMANDOS, novo_def, NULL);
         }
         
-        // Recursivamente processar o corpo desta função também
+        // Recursivamente processa o corpo desta função também
         extrair_funcoes_aninhadas(no->direita, comandos_globais, definicoes_funcoes);
     } else if (no->tipo == NO_CHAMADA_FUNCAO) {
         // Esta é uma chamada de função que deveria estar no main
@@ -320,8 +377,8 @@ void extrair_funcoes_aninhadas(No *no, No **comandos_globais, No **definicoes_fu
     }
 }
 
-// Função para gerar código C a partir da AST
-// Esta função percorre a AST e gera o código C correspondente
+// Gera o código C para todas as funções definidas no programa
+// Para cada função, declara suas variáveis locais e traduz seus comandos
 void gerar_funcoes(No *no, FILE *saida) {
     if (!no) return;
 
@@ -332,7 +389,7 @@ void gerar_funcoes(No *no, FILE *saida) {
         // Cabeçalho da função
         fprintf(saida, "void %s() {\n", no->valor.sval);
 
-        // 1) Coletar e declarar variáveis locais, com 1 nível de indentação (4 espaços)
+        // 1) Coletar e declarar variáveis locais, com indentação de 4 espaços
         struct ListaVar *vars = NULL;
         coletar_vars(no->direita, &vars);
         for (struct ListaVar *cur = vars; cur; cur = cur->prox) {
@@ -341,7 +398,7 @@ void gerar_funcoes(No *no, FILE *saida) {
                     cur->nome);
         }
 
-        // 2) Gerar o corpo da função, também com indentação de 1 nível
+        // 2) Gerar o corpo da função, também com indentação
         gerar_codigo_c_interno(no->direita, saida, 1);
 
         // 3) Liberar a lista de variáveis
@@ -356,14 +413,15 @@ void gerar_funcoes(No *no, FILE *saida) {
     }
 }
 
-// Função principal para gerar código C a partir da AST
+// Função principal que coordena a geração completa do código C
+// Gera cabeçalhos, funções e o main()
 void gerar_codigo_c(No *no, FILE *saida) {
     static bool header_printed = false;
     struct ListaVar *vars = NULL;
     No *comandos_globais = NULL;
     No *definicoes_funcoes = NULL;
 
-    // imprime o include apenas na primeira vez
+    // Imprime o include apenas na primeira chamada
     if (!header_printed) {
         fprintf(saida, "#include <stdio.h>\n\n");
         header_printed = true;
@@ -377,13 +435,14 @@ void gerar_codigo_c(No *no, FILE *saida) {
         gerar_funcoes(definicoes_funcoes, saida);
     }
 
-    // Agora o main - coletar vars apenas dos comandos globais
+    // Agora gera o main() - coletar variáveis apenas dos comandos globais
     coletar_vars(comandos_globais, &vars);
     fprintf(saida, "int main() {\n");
-    imprimir_decl_vars(vars, saida);
+    imprimir_decl_vars(vars, saida);  // Declara as variáveis no início da função
     gerar_codigo_c_interno(comandos_globais, saida, 1);
     fprintf(saida, "    return 0;\n}\n");
 
+    // Libera a memória da lista de variáveis
     while (vars) {
         struct ListaVar *tmp = vars;
         vars = vars->prox;
@@ -392,27 +451,34 @@ void gerar_codigo_c(No *no, FILE *saida) {
 }
 
 
-// Função recursiva auxiliar para geração de código C com indentação
+// Função recursiva que traduz cada nó da AST para código C
+// indent: nível de indentação para formatar o código gerado
 void gerar_codigo_c_interno(No *no, FILE *saida, int indent) {
     if (!no) return;
+    
+    // Cria a string de indentação com espaços
     char ind[32];
     memset(ind, ' ', indent * 4);
     ind[indent * 4] = '\0';
+    
     switch (no->tipo) {
         case NO_DEF_FUNCAO:
             // Ignorar: as funções já foram geradas antes do main
             break;
         case NO_LISTA_COMANDOS:
+            // Processa cada comando na lista
             gerar_codigo_c_interno(no->esquerda, saida, indent);
             if (no->direita) gerar_codigo_c_interno(no->direita, saida, indent);
             break;
         case NO_IF:
+            // Gera estrutura if-else em C
             fprintf(saida, "%sif ", ind);
             gerar_codigo_c_interno(no->esquerda, saida, 0);
             fprintf(saida, " {\n");
             gerar_codigo_c_interno(no->meio, saida, indent + 1);
             fprintf(saida, "%s}", ind);
             if (no->direita) {
+                // Se tiver bloco else
                 fprintf(saida, " else {\n");
                 gerar_codigo_c_interno(no->direita, saida, indent + 1);
                 fprintf(saida, "%s}", ind);
@@ -420,6 +486,7 @@ void gerar_codigo_c_interno(No *no, FILE *saida, int indent) {
             fprintf(saida, "\n");
             break;
         case NO_FOR:
+            // Traduz for do Python para for em C
             fprintf(saida, "%sfor (int %s = 0; %s < ", ind, no->valor.sval, no->valor.sval);
             gerar_codigo_c_interno(no->esquerda, saida, 0);
             fprintf(saida, "; %s++) {\n", no->valor.sval);
@@ -428,6 +495,7 @@ void gerar_codigo_c_interno(No *no, FILE *saida, int indent) {
             break;
             
         case NO_WHILE:
+            // Traduz while para C
             fprintf(saida, "%swhile (", ind);
             gerar_codigo_c_interno(no->esquerda, saida, 0);
             fprintf(saida, ") {\n");
@@ -436,11 +504,12 @@ void gerar_codigo_c_interno(No *no, FILE *saida, int indent) {
             break;
             
         case NO_PRINT: {
+            // Traduz print para printf
             if (no->esquerda->tipo == NO_STRING) {
                 // Caso especial para string literal
                 fprintf(saida, "%sprintf(\"%s\\n\");\n", ind, no->esquerda->valor.sval);
             } else {
-                // Caso para expressões numéricas
+                // Para expressões numéricas, usa formato adequado
                 bool is_float = eh_no_flutuante(no->esquerda);
                 const char *fmt = is_float ? "%f" : "%d";
                 fprintf(saida, "%sprintf(\"%s\\n\", ", ind, fmt);
@@ -450,12 +519,14 @@ void gerar_codigo_c_interno(No *no, FILE *saida, int indent) {
             break;
         }
         case NO_ATRIBUICAO:
+            // Traduz atribuição de variável
             fprintf(saida, "%s%s = ", ind, no->valor.sval);
             gerar_codigo_c_interno(no->direita, saida, 0);
             fprintf(saida, ";\n");
             break;
         case NO_COMPARACAO:
         case NO_ARITMETICO:
+            // Traduz expressões aritméticas e comparações
             fprintf(saida, "(");
             gerar_codigo_c_interno(no->esquerda, saida, 0);
             fprintf(saida, " %s ", obter_string_op(no->op));
@@ -463,20 +534,25 @@ void gerar_codigo_c_interno(No *no, FILE *saida, int indent) {
             fprintf(saida, ")");
             break;
         case NO_NUMERO:
+            // Número inteiro literal
             fprintf(saida, "%d", no->valor.ival);
             break;
         case NO_FLUTUANTE:
+            // Número de ponto flutuante literal
             fprintf(saida, "%f", no->valor.fval);
             break;
         case NO_IDENTIFICADOR:
+            // Nome de variável
             fprintf(saida, "%s", no->valor.sval);
             break;
         case NO_CHAMADA_FUNCAO:
+            // Chamada de função
             fprintf(saida, "%s%s(", ind, no->valor.sval);
-            // Por enquanto, assumimos que não há argumentos
+            // Por enquanto, assume que não há argumentos
             fprintf(saida, ");\n");
             break;
         case NO_STRING:
+            // String literal
             fprintf(saida, "\"%s\"", no->valor.sval);
             break;
         default:
@@ -484,17 +560,23 @@ void gerar_codigo_c_interno(No *no, FILE *saida, int indent) {
     }
 }
 
-// Impressão textual da AST para debug
+// Função auxiliar que imprime a AST em formato legível para humanos
+// Útil para depuração da estrutura gerada pelo parser
 void imprimirAST(No *no, int nivel) {
     if (!no) return;
+    
+    // Indentação para visualização da hierarquia
     for (int i = 0; i < nivel; i++) printf("  ");
+    
     switch (no->tipo) {
         case NO_LISTA_COMANDOS:
+            // Lista de comandos sequenciais
             printf("LISTA_COMANDOS\n");
             imprimirAST(no->esquerda, nivel + 1);
             imprimirAST(no->direita, nivel + 1);
             break;
         case NO_IF:
+            // Comando condicional if-else
             printf("IF\n");
             imprimirAST(no->esquerda, nivel + 1);    // condição
             for (int i = 0; i < nivel; i++) printf("  ");
@@ -507,46 +589,57 @@ void imprimirAST(No *no, int nivel) {
             }
             break;
         case NO_FOR:
+            // Loop for com variável e alcance
             printf("FOR var=%s\n", no->valor.sval);
             imprimirAST(no->esquerda, nivel + 1);    // alcance
             imprimirAST(no->direita, nivel + 1);   // corpo
             break;
         case NO_DEF_FUNCAO:
+            // Definição de função
             printf("DEF %s\n", no->valor.sval);
-            imprimirAST(no->esquerda, nivel + 1);    // range
-            imprimirAST(no->direita, nivel + 1);
+            imprimirAST(no->esquerda, nivel + 1);    // parâmetros
+            imprimirAST(no->direita, nivel + 1);     // corpo
             break;
         case NO_PRINT:
+            // Comando de impressão
             printf("PRINT\n");
-            imprimirAST(no->esquerda, nivel + 1);
+            imprimirAST(no->esquerda, nivel + 1);    // expressão a imprimir
             break;
         case NO_ATRIBUICAO:
+            // Atribuição de variável
             printf("ATRIBUIR %s\n", no->valor.sval);
-            imprimirAST(no->direita, nivel + 1);
+            imprimirAST(no->direita, nivel + 1);     // valor atribuído
             break;
         case NO_COMPARACAO:
+            // Operação de comparação
             printf("COMPARACAO %s\n", obter_string_op(no->op));
-            imprimirAST(no->esquerda, nivel + 1);
-            imprimirAST(no->direita, nivel + 1);
+            imprimirAST(no->esquerda, nivel + 1);    // operando esquerdo
+            imprimirAST(no->direita, nivel + 1);     // operando direito
             break;
         case NO_ARITMETICO:
+            // Operação aritmética
             printf("ARITMETICO %s\n", obter_string_op(no->op));
-            imprimirAST(no->esquerda, nivel + 1);
-            imprimirAST(no->direita, nivel + 1);
+            imprimirAST(no->esquerda, nivel + 1);    // operando esquerdo
+            imprimirAST(no->direita, nivel + 1);     // operando direito
             break;
         case NO_NUMERO:
+            // Número inteiro literal
             printf("NUMERO %d\n", no->valor.ival);
             break;
         case NO_FLUTUANTE:
+            // Número flutuante literal
             printf("FLUTUANTE %f\n", no->valor.fval);
             break;
         case NO_IDENTIFICADOR:
+            // Nome de variável
             printf("IDENTIFICADOR %s\n", no->valor.sval);
             break;
         case NO_STRING:
+            // String literal
             printf("STRING \"%s\"\n", no->valor.sval);
             break;
         default:
+            // Nó de tipo desconhecido/não implementado
             printf("NO tipo %d\n", no->tipo);
             break;
     }
