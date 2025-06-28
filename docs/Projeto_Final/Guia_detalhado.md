@@ -225,6 +225,7 @@ sub = b - a
   - Números decimais
 
 Não Suporta:
+
 - Strings
 - Booleanos (True/False), Listas, Dicionários, Tuplas
     - Seria em bibliotecas então fugia do escopo basico da linguagem
@@ -238,6 +239,7 @@ Não Suporta:
 - `/` (divisão)
 
 Não Suporta:
+
 - `**` (potência)
 - `//` (divisão inteira)
 - `%` (módulo)
@@ -251,6 +253,7 @@ Não Suporta:
 - `!=` (diferente)
 
 Não Suporta:
+
 - `is`
 - `is not`
 - `in`
@@ -260,6 +263,7 @@ Não Suporta:
 - `=` (atribuição simples)
 
 Não Suporta:
+
 - `++`
 - `--`
 - `+=`
@@ -278,6 +282,7 @@ else:
 ```
 
 Não Suporta:
+
 - `elif`
 - Operadores lógicos (`and`, `or`, `not`)
 
@@ -287,6 +292,7 @@ while condição:
     # código
 ```
 Não Suporta:
+
 - `break`
 - `continue`
 
@@ -298,6 +304,7 @@ for i in range(valor):
 - O `in` funciona apenas no metodo for.
 
 Não Suporta:
+
 - `for` com listas
 - `for` com strings
 - `range` com comparação
@@ -315,6 +322,7 @@ def nome_funcao(param1, param2):
 ```
 
 Não Suporta:
+
 - Parâmetros com valor padrão
 - Parâmetros nomeados
 - Retorno múltiplo
@@ -328,6 +336,7 @@ Não Suporta:
   - Exemplo: `print(x)`, `print(x + y)` ou `print("Hello, World!")`
 
 Não Suporta:
+
 - `input()`
 - `len()`
 - `range()` (exceto no for)
@@ -340,6 +349,7 @@ Paricalamente Suporta:
 Obs: Não há mensagens de erro associadas.
 
 Não Suporta:
+
 - Variáveis nonlocal
 - Variáveis em funções aninhadas
 - Closure
@@ -356,6 +366,7 @@ Não Suporta:
 - Chamadas de função
 
 Não Suporta:
+
 - Expressões com operadores lógicos
 - Expressões condicionais (ternário)
 - Expressões com múltiplos operadores lógicos
