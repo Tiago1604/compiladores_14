@@ -93,7 +93,7 @@ void verificar_operandos_funcao(No *op1, No *op2) {
 %nonassoc THEN
 %nonassoc ELSE
 
-%define "parse.error" "verbose"
+%define parse.error verbose
 
 %%
 
