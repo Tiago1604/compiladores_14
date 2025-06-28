@@ -14,6 +14,10 @@ Link para o pages: [Link](https://tiago1604.github.io/compiladores_14/)
 ### Descrição dos Diretórios
 
 - **`Compilador/`**: Contém os arquivos principais do compilador, incluindo os arquivos Flex e Bison, além do executável gerado.
+- **`Compilador/tests/`**: Diretório com arquivos de teste para validar o compilador.
+- **`Compilador/tests/saida_tests/`**: Diretório onde são salvas as saídas `.c` geradas pelos testes.
+- **`Compilador/entrada/`**: Diretório para arquivos de entrada Python.
+- **`Compilador/saida/`**: Diretório para arquivos de saída C gerados.
 - **`Estudo/`**: Diretório com materiais de estudo e resumos das semanas iniciais.
 - **`docs/`**: Diretório com documentação detalhada, incluindo atas, planejamento e atividades semanais.
 - **`semana 1/`, `semana2/`, `semana3/`**: Diretórios organizados por semana.
@@ -22,46 +26,114 @@ Link para o pages: [Link](https://tiago1604.github.io/compiladores_14/)
 Essa estrutura foi projetada para organizar o projeto de forma clara, separando o código-fonte, documentação, materiais de estudo e versões semanais do compilador.
 
 ## Como Executar
-1. **Clonar o repositório**
+
+### 1. **Clonar o repositório**
    ```bash
    git clone https://github.com/Tiago1604/compiladores_14
    cd compiladores_14
    ```
 
-2. **Instalar dependências**
-   - É necessário ter **Flex** e **Bison** instalados no sistema.  
+### 2. **Instalar dependências**
+   - É necessário ter **Flex** e **Bison** instalados no sistema.
    - Em distribuições Linux baseadas em Debian/Ubuntu:
-     ```
+     ```bash
      sudo apt-get update
-     ```
-     ```
      sudo apt-get install flex bison
      ```
    - Em outras plataformas, consulte a documentação.
+   - É necessario o **GCC** para compilar o código C:
+     ```bash
+     sudo apt-get install build-essential
+     ```
+   - É necessário o **Make** para compilar o projeto:
+     ```bash
+     sudo apt-get install make
+     ```
 
-3. **Entre em Compilador**
-    - Para compilar manualmente:
+### 3. **Compilar o projeto**
+
+#### **Usando Makefile (Recomendado):**
+   ```bash
+   cd Compilador
+   make
    ```
-    cd Compilador
-    ```
-    ```
-    bison -d parser.y
-    ```
-    ```
-    flex scanner.l
-    ```
-    ```
-    gcc -o compilador parser.tab.c lex.yy.c ast.c tabela.c -lfl
-    ```
 
-    ```
-    ./compilador arquivo_entrada.txt arquivo_saida.c
-    ```
-    ou
-    ```
-    make
-    make PyToC arquivo_entrada.txt arquivo_saida.c
-    ```
+#### **Compilação manual:**
+   ```bash
+   cd Compilador
+   bison -d parser.y
+   flex scanner.l
+   gcc -o compilador parser.tab.c lex.yy.c ast.c tabela.c -lfl
+   ```
+
+### 4. **Executar o compilador**
+
+#### **Compilação de arquivo único:**
+   ```bash
+   make PyToC
+   ```
+   - **Entrada:** `entrada/entrada.py`
+   - **Saída:** `saida/saida.c`
+
+#### **Compilação manual:**
+   ```bash
+   ./build/compilador arquivo_entrada.txt arquivo_saida.c
+   ```
+   ou (se compilado manualmente):
+   ```bash
+   ./compilador arquivo_entrada.txt arquivo_saida.c
+   ```
+
+#### **Executar todos os testes:**
+   ```bash
+   make test
+   ```
+   - Executa todos os arquivos `.txt` e `.py` da pasta `tests/`
+   - **Saídas:** Salvas em `tests/saida_tests/` com extensão `.c`
+   - Exemplo: `tests/valid1.txt` → `tests/saida_tests/valid1.c`
+
+#### **Executar testes do parser:**
+   ```bash
+   make test-parser
+   ```
+
+### 5. **Limpeza**
+   ```bash
+   make clean
+   ```
+   - Remove pasta `build/`
+   - Remove arquivo `saida/saida.c`
+   - Remove pasta `tests/saida_tests/`
+
+## Estrutura de Entrada e Saída
+
+### **Arquivos de Entrada**
+- **Formato:** Arquivos `.py` ou `.txt` contendo código Python
+- **Localização:** 
+  - Arquivo principal: `entrada/entrada.py`
+  - Testes: `tests/*.txt` e `tests/*.py`
+
+### **Arquivos de Saída**
+- **Formato:** Arquivos `.c` contendo código C equivalente
+- **Localização:**
+  - Saída principal: `saida/saida.c`
+  - Saídas de teste: `tests/saida_tests/*.c`
+
+### **Exemplo de Uso**
+```bash
+# Compilar arquivo principal
+make PyToC
+
+# Executar todos os testes
+make test
+
+# Verificar saídas dos testes
+ls tests/saida_tests/
+
+# Limpar todas as saídas
+make clean
+```
+
 ## Ajustes e Melhorias
 
 - **AST (Árvore Sintática Abstrata):**

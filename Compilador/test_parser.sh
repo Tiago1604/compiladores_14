@@ -2,7 +2,7 @@
 
 COMPILADOR="./build/compilador"
 TEST_DIR="tests"
-SAIDA_DIR="saida"
+SAIDA_DIR="tests/saida_tests"
 mkdir -p "$SAIDA_DIR"
 
 echo "==== Testes VÁLIDOS ===="

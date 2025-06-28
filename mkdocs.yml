@@ -9,6 +9,9 @@ nav:
       - Metodologia: planejamento/metodologia.md
       - Ferramentas: planejamento/ferramentas.md
       - Planejamento das Sprints: planejamento/planejamento_das_sprints.md
+  - Projeto Final:
+      - Guia Detalhado: Projeto_Final/Guia_detalhado.md
+      - Especificação do Projeto: Projeto_Final/Especificacao_do_projeto.md
   - Decisões Técnicas: decisoes/decisao.md
   - Problemas e Soluções: 
       - Problemas e Soluções 1: problemas_e_solucoes/problemas_e_solucoes1.md
