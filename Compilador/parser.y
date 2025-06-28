@@ -66,6 +66,7 @@ void verificar_operandos_funcao(No *op1, No *op2) {
 %token <inteiro> INTEIRO
 %token <flutuante> FLUTUANTE
 %token <str> IDENTIFICADOR
+%token <str> STRING        // Novo token para strings
 %token IF ELSE FOR WHILE IN RANGE PRINT DEF
 %token SOMA SUBTRACAO MULTIPLICACAO DIVISAO
 %token ATRIBUICAO IGUAL DIFERENTE MENOR MAIOR MENOR_IGUAL MAIOR_IGUAL
@@ -85,15 +86,14 @@ void verificar_operandos_funcao(No *op1, No *op2) {
 %type <arvore> expressao
 %type <arvore> comando_while
 
-
-%define parse.error verbose
-
 // Definição de precedência e associatividade
 %left IGUAL DIFERENTE MENOR MAIOR MENOR_IGUAL MAIOR_IGUAL
 %left SOMA SUBTRACAO
 %left MULTIPLICACAO DIVISAO
 %nonassoc THEN
 %nonassoc ELSE
+
+%define parse.error verbose
 
 %%
 
@@ -296,6 +296,7 @@ expressao
     }
     | INTEIRO                      { $$ = criar_numero($1); }
     | FLUTUANTE                    { $$ = criar_flutuante($1); }
+    | STRING                       { $$ = criar_string($1); }  // Nova regra para strings
     | IDENTIFICADOR                {
         // Verifica se a variável foi declarada
         if (!buscarSimbolo($1, escopo_atual)) {
@@ -305,8 +306,7 @@ expressao
         }
         $$ = criar_identificador($1);
       }
-    | ABRE_PAR expressao FECHA_PAR
-      { $$ = $2; }
+    | ABRE_PAR expressao FECHA_PAR { $$ = $2; }
     ;
 
 %%

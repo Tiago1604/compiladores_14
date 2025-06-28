@@ -42,6 +42,14 @@ extern void adicionar_erro(const char *mensagem);
 ")"                    { return FECHA_PAR; }
 ":"                    { return DOIS_PONTOS; }
 
+\"[^\"]*\"  { 
+    // Remove as aspas
+    yylval.str = strdup(yytext + 1); 
+    if (yylval.str[strlen(yylval.str) - 1] == '"')
+        yylval.str[strlen(yylval.str) - 1] = '\0';
+    return STRING; 
+}
+
 [ \t]+                 ; /* ignora espaços em branco */
 [\n]                   { num_linha++; }
 #.*    { adicionar_erro("Comentário não permitido nesta linguagem"); }
