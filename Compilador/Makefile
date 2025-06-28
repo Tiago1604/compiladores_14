@@ -35,6 +35,7 @@ build/tabela.o: tabela.c tabela.h
 clean:
 	rm -rf build/
 	rm -f saida/saida.c
+	rm -rf tests/saida_tests/
 
 # Testes do parser (válidos/inválidos)
 test-parser: build/compilador
