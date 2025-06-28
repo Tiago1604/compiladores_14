@@ -2,7 +2,7 @@
 
 ## 1. Visão Geral
 
-PYtoC é um compilador que traduz um subconjunto da linguagem Python para código C. O projeto foi desenvolvido como parte da disciplina de Compiladores, utilizando as ferramentas Flex e Bison.
+PYtoC é um compilador que traduz da linguagem Python para código C. O projeto foi desenvolvido como parte da disciplina de Compiladores, utilizando as ferramentas Flex e Bison.
 
 ## 2. Funcionalidades Implementadas
 
@@ -40,8 +40,10 @@ PYtoC é um compilador que traduz um subconjunto da linguagem Python para códig
 ## 3. Problemas e Soluções
 
 ### 3.1 Integração Flex/Bison
-- **Problema**: Dificuldades na integração inicial entre analisador léxico e sintático
-- **Solução**: Revisão da documentação e uso correto do arquivo parser.tab.h
+- **Problema**: Dificuldades em relação a conflitos do parser, do tipo:<br>
+  `parser.y: warning: x shift/reduce conflicts [-Wconflicts-sr]
+   parser.y: warning: x reduce/reduce conflict [-Wconflicts-rr]`
+- **Solução**: Estudo e aplicação do error verbose do Bison, além de ajustes na gramática para reduzir conflitos
 
 ### 3.2 Compatibilidade macOS
 - **Problema**: Dificuldades específicas no ambiente macOS
@@ -58,6 +60,10 @@ PYtoC é um compilador que traduz um subconjunto da linguagem Python para códig
 ### 3.5 Gerenciamento de Escopo
 - **Problema**: Conflitos entre variáveis em diferentes contextos
 - **Solução**: Implementação de sistema de escopo hierárquico
+
+### 3.6 Interpretação de toda a linguagem sem delimitação de bloco
+- **Problema**: Dificuldade em interpretar corretamente o código sem delimitação de bloco
+- **Solução**: ...
 
 ## 4. Decisões Técnicas
 
@@ -85,18 +91,18 @@ PYtoC é um compilador que traduz um subconjunto da linguagem Python para códig
 - Geração de código para estruturas fundamentais
 - Tabela de símbolos
 - Gerenciamento de escopo
+- Árvore sintática abstrata (AST)
 
-### 5.2 Limitações Conhecidas
+### 5.2 Limitações
 - Sem suporte a arrays/listas
 - Sem suporte a strings em todas operações
 - Funções sem parâmetros
 - Sem suporte a módulos/imports
-
-### 5.3 Próximos Passos
-- Implementação de strings completa
-- Suporte a parâmetros em funções
-- Melhorias no tratamento de erros
-- Otimizações no código gerado
+- Tratamento de erros limitado
+- Sem suporte a classes e objetos
+- Sem suporte a exceções
+- Sem suporte a operadores lógicos (and, or, not)
+- Sem suporte a operadores bitwise
 
 ## 6. Compilação e Uso
 

@@ -317,7 +317,7 @@ Não Suporta:
 #### 4.2 Funções Built-in
 - `print()`
   - Aceita apenas uma expressão ou string
-  - Exemplo: `print(x)` ou `print(x + y)` ou `print("Hello, World!")`
+  - Exemplo: `print(x)`, `print(x + y)` ou `print("Hello, World!")`
 
 Não Suporta:
 - `input()`
